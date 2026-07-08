@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Simulator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        /* --- Top Menu Bar --- */
+        #menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+            z-index: 9999;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .menu-left, .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .apple-logo {
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .menu-item {
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            opacity: 0.7;
+        }
+
+        /* --- Desktop Area --- */
+        #desktop {
+            width: 100%;
+            height: 100%;
+            padding-top: 24px;
+            position: relative;
+        }
+
+        /* --- Draggable Window --- */
+        .window {
+            position: absolute;
+            top: 100px;
+            left: 100px;
+            width: 450px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.4);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .window-header {
+            height: 30px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            position: relative;
+            cursor: move;
+            border-bottom: 1px solid #dcdcdc;
+        }
+
+        .window-buttons {
+            display: flex;
+            gap: 8px;
+            position: absolute;
+            left: 12px;
+        }
+
+        .win-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .btn-close { background: #ff5f56; border: 0.5px solid #e0443e; }
+        .btn-minimize { background: #ffbd2e; border: 0.5px solid #dea123; }
+        .btn-maximize { background: #27c93f; border: 0.5px solid #1aab29; }
+
+        .window-title {
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a4a4a;
+        }
+
+        .window-content {
+            padding: 16px;
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+            overflow-y: auto;
+            background: #ffffff;
+        }
+
+        /* --- The Dock --- */
+        #dock-container {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+        }
+
+        .dock {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            padding: 8px;
+            border-radius: 20px;
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .dock-item {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.2s ease, margin 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .dock-item:hover {
+            transform: scale(1.2) translateY(-10px);
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menu-bar">
+        <div class="menu-left">
+            <span class="apple-logo">&#63743;</span>
+            <span class="menu-item" style="font-weight: 700;">Finder</span>
+            <span class="menu-item">File</span>
+            <span class="menu-item">Edit</span>
+            <span class="menu-item">View</span>
+            <span class="menu-item">Go</span>
+            <span class="menu-item">Window</span>
+            <span class="menu-item">Help</span>
+        </div>
+        <div class="menu-right">
+            <span class="menu-item">🇺🇸</span>
+            <span class="menu-item">Wi-Fi</span>
+            <span class="menu-item" id="live-clock">Mon 9:41 AM</span>
+        </div>
+    </div>
+
+    <div id="desktop">
+        
+        <div class="window" id="safari-window">
+            <div class="window-header" id="window-header">
+                <div class="window-buttons">
+                    <div class="win-btn btn-close" onclick="closeWindow()"></div>
+                    <div class="win-btn btn-minimize"></div>
+                    <div class="win-btn btn-maximize"></div>
+                </div>
+                <div class="window-title">Welcome to macOS Simulator</div>
+            </div>
+            <div class="window-content">
+                <h3 style="margin-bottom: 10px;">Hello, User!</h3>
+                <p>Welcome to this responsive macOS simulation environment.</p>
+                <br>
+                <p><strong>Features implemented:</strong></p>
+                <ul>
+                    <li>Dynamic, US-formatted live system clock.</li>
+                    <li>Draggable application window interface.</li>
+                    <li>Interactive desktop layout with an apple-style app Dock.</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="dock-container">
+        <div class="dock">
+            <div class="dock-item" onclick="openWindow()" title="Finder">📂</div>
+            <div class="dock-item" title="Safari">🌐</div>
+            <div class="dock-item" title="Messages">💬</div>
+            <div class="dock-item" title="Maps">📍</div>
+            <div class="dock-item" title="Photos">🖼️</div>
+            <div class="dock-item" title="System Settings">⚙️</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Live US Locale Clock ---
+        function updateClock() {
+            const clockElement = document.getElementById('live-clock');
+            const now = new Date();
+            
+            const options = { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit', 
+                hour12: true 
+            };
+            
+            // Format standard to US layout: e.g., "Wed, Jul 8, 6:00 PM"
+            clockElement.textContent = now.toLocaleString('en-US', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- Window Management ---
+        const myWindow = document.getElementById('safari-window');
+        
+        function closeWindow() {
+            myWindow.style.display = 'none';
+        }
+
+        function openWindow() {
+            myWindow.style.display = 'flex';
+        }
+
+        // --- Draggable Logic ---
+        dragElement(myWindow);
+
+        function dragElement(elmnt) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            const header = document.getElementById(elmnt.id + "-header");
+            
+            if (header) {
+                header.onmousedown = dragMouseDown;
+            } else {
+                elmnt.onmousedown = dragMouseDown;
+            }
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                // Get mouse cursor position at startup
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                // Calculate the new cursor position
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                
+                // Set the element's new position, bounding it to the top menu bar limit
+                let newTop = elmnt.offsetTop - pos2;
+                if (newTop < 24) newTop = 24; 
+                
+                elmnt.style.top = newTop + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                // Stop moving when mouse button is released
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+    </script>
+</body>
+</html>
