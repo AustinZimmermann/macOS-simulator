@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Simulator - Garfield (2004)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            /* Garfield orange/lasagna inspired aesthetic background */
+            background: url('https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=2570&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        /* --- Top Menu Bar --- */
+        #menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #111;
+            z-index: 9999;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .menu-left, .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .apple-logo {
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .menu-item {
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            opacity: 0.7;
+        }
+
+        /* --- Desktop Area --- */
+        #desktop {
+            width: 100%;
+            height: 100%;
+            padding-top: 24px;
+            position: relative;
+        }
+
+        /* --- Disney+ Window (macOS style) --- */
+        .window {
+            position: absolute;
+            top: 80px;
+            left: 120px;
+            width: 680px;
+            height: 420px;
+            background: #1a1d29; /* Disney+ Dark Blue */
+            border-radius: 10px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .window-header {
+            height: 34px;
+            background: #090b13;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            position: relative;
+            cursor: move;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .window-buttons {
+            display: flex;
+            gap: 8px;
+            position: absolute;
+            left: 12px;
+            z-index: 20;
+        }
+
+        .win-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .btn-close { background: #ff5f56; border: 0.5px solid #e0443e; }
+        .btn-minimize { background: #ffbd2e; border: 0.5px solid #dea123; }
+        .btn-maximize { background: #27c93f; border: 0.5px solid #1aab29; }
+
+        .window-title {
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: #a2a4a6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .window-title img {
+            height: 14px;
+        }
+
+        /* --- Disney+ App Content --- */
+        .window-content {
+            flex: 1;
+            display: flex;
+            color: #f9f9f9;
+            font-family: 'Avenir', sans-serif;
+        }
+
+        .movie-hero {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, #1a1d29 30%, transparent 85%), 
+                        url('https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=2543&auto=format&fit=crop') no-repeat center right; 
+            background-size: cover;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .movie-title {
+            font-size: 38px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            color: #f9f9f9;
+        }
+
+        .movie-meta {
+            font-size: 12px;
+            color: #cacaca;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .rating-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+
+        .movie-description {
+            font-size: 14px;
+            max-width: 320px;
+            line-height: 1.5;
+            color: #f9f9f9;
+            margin-bottom: 25px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .play-btn {
+            background: #f9f9f9;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            transition: background 0.2s;
+        }
+
+        .play-btn:hover {
+            background: #dcddde;
+        }
+
+        /* --- The Dock --- */
+        #dock-container {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+        }
+
+        .dock {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            padding: 10px;
+            border-radius: 22px;
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        .dock-item {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s ease, margin 0.2s ease;
+        }
+
+        .dock-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        .dock-item:hover {
+            transform: scale(1.25) translateY(-10px);
+            margin: 0 10px;
+        }
+
+        .dock-item.system-icon {
+            background: rgba(255,255,255,0.8);
+            font-size: 26px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menu-bar">
+        <div class="menu-left">
+            <span class="apple-logo">&#63743;</span>
+            <span class="menu-item" style="font-weight: 700;">Disney+</span>
+            <span class="menu-item">File</span>
+            <span class="menu-item">Edit</span>
+            <span class="menu-item">View</span>
+            <span class="menu-item">Window</span>
+            <span class="menu-item">Help</span>
+        </div>
+        <div class="menu-right">
+            <span class="menu-item">🇺🇸</span>
+            <span class="menu-item">Wi-Fi</span>
+            <span class="menu-item" id="live-clock">Mon 9:41 AM</span>
+        </div>
+    </div>
+
+    <div id="desktop">
+        
+        <div class="window" id="disney-window">
+            <div class="window-header" id="disney-window-header">
+                <div class="window-buttons">
+                    <div class="win-btn btn-close" onclick="closeWindow()"></div>
+                    <div class="win-btn btn-minimize"></div>
+                    <div class="win-btn btn-maximize"></div>
+                </div>
+                <div class="window-title">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Disney_plus_icon.png" alt="Disney+">
+                    Disney+ — Garfield (2004)
+                </div>
+            </div>
+            <div class="window-content">
+                <div class="movie-hero">
+                    <h1 class="movie-title">Garfield</h1>
+                    <div class="movie-meta">
+                        <span class="rating-badge">PG</span>
+                        <span>2004</span>
+                        <span>1h 20m</span>
+                        <span>Comedy, Family</span>
+                    </div>
+                    <p class="movie-description">
+                        Based on the popular comic strip, this live-action/CGI hybrid film follows the fat, lazy, lasagna-loving orange cat Garfield as he gets jealous of his owner Jon’s new pet dog, Odie.
+                    </p>
+                    <button class="play-btn" onclick="alert('Streaming Garfield (2004) in HD...')">
+                        <span>▶</span> Stream Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="dock-container">
+        <div class="dock">
+            <div class="dock-item system-icon" title="Finder">📂</div>
+            <div class="dock-item" onclick="openWindow()" title="Disney+">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Disney_plus_icon.png" alt="Disney+">
+            </div>
+            <div class="dock-item system-icon" title="Safari">🌐</div>
+            <div class="dock-item system-icon" title="System Settings">⚙️</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Live US Locale Clock Management ---
+        function updateClock() {
+            const clockElement = document.getElementById('live-clock');
+            const now = new Date();
+            
+            const options = { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit', 
+                hour12: true 
+            };
+            
+            // Outputs strictly customized American English: e.g., "Wed, Jul 8, 6:42 PM"
+            clockElement.textContent = now.toLocaleString('en-US', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- Window Toggling Functions ---
+        const disneyWindow = document.getElementById('disney-window');
+        
+        function closeWindow() {
+            disneyWindow.style.display = 'none';
+        }
+
+        function openWindow() {
+            disneyWindow.style.display = 'flex';
+        }
+
+        // --- Drag-and-Drop Implementation ---
+        dragElement(disneyWindow);
+
+        function dragElement(elmnt) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            const header = document.getElementById(elmnt.id + "-header");
+            
+            if (header) {
+                header.onmousedown = dragMouseDown;
+            } else {
+                elmnt.onmousedown = dragMouseDown;
+            }
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                
+                let newTop = elmnt.offsetTop - pos2;
+                // Ensures window does not clip past the top Mac menu bar
+                if (newTop < 24) newTop = 24; 
+                
+                elmnt.style.top = newTop + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+    </script>
+</body>
+</html>
