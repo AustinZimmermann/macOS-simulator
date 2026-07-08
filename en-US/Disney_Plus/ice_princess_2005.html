@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS - Ice Princess (2005)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            /* Ice Princess themed winter aesthetic background */
+            background: url('https://images.unsplash.com/photo-1547754980-3df97fed72a8?q=80&w=2564&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        /* --- Top Menu Bar --- */
+        #menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 24px;
+            background: rgba(230, 242, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a2a3a;
+            z-index: 9999;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .menu-left, .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .apple-logo {
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .menu-item {
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            opacity: 0.7;
+        }
+
+        /* --- Desktop Area --- */
+        #desktop {
+            width: 100%;
+            height: 100%;
+            padding-top: 40px;
+            position: relative;
+        }
+
+        /* --- Desktop Folders / Icons --- */
+        .desktop-icon {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .desktop-icon img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            margin-bottom: 6px;
+            transition: transform 0.1s ease;
+        }
+
+        .desktop-icon:active img {
+            transform: scale(0.95);
+        }
+
+        .desktop-icon span {
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            background: rgba(0,0,0,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* --- macOS Window Frame --- */
+        .window {
+            position: absolute;
+            top: 120px;
+            left: 80px;
+            width: 640px;
+            height: 420px;
+            background: #0c111e; /* Disney+ Dark Background */
+            border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .window-header {
+            height: 34px;
+            background: rgba(20, 26, 41, 0.95);
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            position: relative;
+            cursor: move;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .window-buttons {
+            display: flex;
+            gap: 8px;
+            position: absolute;
+            left: 14px;
+        }
+
+        .win-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .btn-close { background: #ff5f56; border: 0.5px solid #e0443e; }
+        .btn-minimize { background: #ffbd2e; border: 0.5px solid #dea123; }
+        .btn-maximize { background: #27c93f; border: 0.5px solid #1aab29; }
+
+        .window-title {
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: #a2a6b0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* --- Disney+ Interface Styling --- */
+        .window-content {
+            flex: 1;
+            font-color: #f9f9f9;
+            color: #f9f9f9;
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dplus-hero {
+            position: relative;
+            height: 200px;
+            background: linear-gradient(to bottom, rgba(12,17,30,0) 30%, rgba(12,17,30,1) 100%), 
+                        url('https://images.unsplash.com/photo-1517176118179-65244903d13c?q=80&w=1200&auto=format&fit=crop'); /* Ice arena backdrop */
+            background-size: cover;
+            background-position: center;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .dplus-logo-text {
+            font-family: 'Georgia', serif;
+            font-size: 32px;
+            font-weight: bold;
+            font-style: italic;
+            letter-spacing: 1px;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(0,210,255,0.6);
+        }
+
+        .dplus-meta {
+            font-size: 12px;
+            color: #cacaca;
+            margin-top: 4px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+
+        .dplus-controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .btn-play {
+            background: #f9f9f9;
+            color: #000000;
+            padding: 8px 24px;
+            border-radius: 4px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-play:hover { background: #dcddde; }
+
+        .btn-round {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #f9f9f9;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-round:hover { background: rgba(255,255,255,0.1); }
+
+        .dplus-body {
+            padding: 0 20px 20px 20px;
+        }
+
+        .dplus-description {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #f9f9f9;
+            max-width: 90%;
+            margin-bottom: 20px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 8px;
+            font-size: 13px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 15px;
+            color: #cacaca;
+        }
+
+        .details-label { color: #8f98a0; }
+
+        /* --- App Dock --- */
+        #dock-container {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+        }
+
+        .dock {
+            background: rgba(200, 225, 255, 0.4);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            padding: 10px;
+            border-radius: 24px;
+            display: flex;
+            align-items: flex-end;
+            gap: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .dock-item {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .dock-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 14px;
+        }
+
+        .dock-item:hover {
+            transform: scale(1.25) translateY(-10px);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menu-bar">
+        <div class="menu-left">
+            <span class="apple-logo">&#63743;</span>
+            <span class="menu-item" style="font-weight: 700;">Disney+</span>
+            <span class="menu-item">View</span>
+            <span class="menu-item">Audio</span>
+            <span class="menu-item">Window</span>
+            <span class="menu-item">Help</span>
+        </div>
+        <div class="menu-right">
+            <span class="menu-item">🇺🇸</span>
+            <span class="menu-item" id="live-clock">Loading Time...</span>
+        </div>
+    </div>
+
+    <div id="desktop">
+        
+        <div class="desktop-icon" onclick="openWindow()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Disney_plus_icon.png" alt="Disney+">
+            <span>Ice Princess</span>
+        </div>
+
+        <div class="window" id="media-window">
+            <div class="window-header" id="window-header">
+                <div class="window-buttons">
+                    <div class="win-btn btn-close" onclick="closeWindow()"></div>
+                    <div class="win-btn btn-minimize"></div>
+                    <div class="win-btn btn-maximize"></div>
+                </div>
+                <div class="window-title">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Disney_plus_icon.png" width="16" height="16" alt="">
+                    Disney+ | Streaming Now
+                </div>
+            </div>
+            
+            <div class="window-content">
+                <div class="dplus-hero">
+                    <div class="dplus-logo-text">Ice Princess</div>
+                    <div class="dplus-meta">
+                        <span class="badge">G</span>
+                        <span>2005</span>
+                        <span>1h 38m</span>
+                        <span>Drama, Comedy, Sports</span>
+                    </div>
+                    <div class="dplus-controls">
+                        <button class="btn-play" onclick="alert('Streaming \'Ice Princess\' (2005) in HD...')">► Play</button>
+                        <button class="btn-round" title="Add to Watchlist">+</button>
+                        <button class="btn-round" title="GroupWatch">👥</button>
+                    </div>
+                </div>
+
+                <div class="dplus-body">
+                    <p class="dplus-description">
+                        Casey Carlyle, a brainy high school student, plans to secure a Harvard scholarship by pursuing a physics project on figure skating. However, as she hits the rink to evaluate the math behind aerodynamic spins, she unexpectedly falls in love with the sport itself.
+                    </p>
+                    
+                    <div class="details-grid">
+                        <span class="details-label">Starring</span>
+                        <span>Joan Cusack, Kim Cattrall, Michelle Trachtenberg, Hayden Panettiere</span>
+                        
+                        <span class="details-label">Directed by</span>
+                        <span>Tim Fywell</span>
+                        
+                        <span class="details-label">Audio Layout</span>
+                        <span>English (US) (Stereo, Dolby Atmos)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="dock-container">
+        <div class="dock">
+            <div class="dock-item" onclick="openWindow()" title="Disney+">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Disney_plus_icon.png" alt="Disney+ Launcher">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Live US System Clock Layout ---
+        function updateClock() {
+            const clockElement = document.getElementById('live-clock');
+            const now = new Date();
+            
+            const options = { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit', 
+                hour12: true 
+            };
+            
+            clockElement.textContent = now.toLocaleString('en-US', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- Window Mechanics Container ---
+        const mediaWindow = document.getElementById('media-window');
+        
+        function closeWindow() {
+            mediaWindow.style.display = 'none';
+        }
+
+        function openWindow() {
+            mediaWindow.style.display = 'flex';
+        }
+
+        // --- Standard macOS Window Draggable Wrapper ---
+        dragElement(mediaWindow);
+
+        function dragElement(elmnt) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            const header = document.getElementById(elmnt.id + "-header");
+            if (header) {
+                header.onmousedown = dragMouseDown;
+            }
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                
+                let newTop = elmnt.offsetTop - pos2;
+                // Bound calculations to prevent dragging over the primary status bar
+                if (newTop < 24) newTop = 24; 
+                
+                elmnt.style.top = newTop + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+    </script>
+</body>
+</html>
