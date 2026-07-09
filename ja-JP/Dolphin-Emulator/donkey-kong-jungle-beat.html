@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS - Dolphin Emulator (ドンキーコング ジャングルビート)</title>
+    <style>
+        :root {
+            --bg-url: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg-url) center/cover no-repeat;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- Menu Bar --- */
+        .menu-bar {
+            height: 24px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 9999;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            box-shadow: 0 1px 0px rgba(0,0,0,0.15);
+        }
+
+        .menu-left, .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .apple-icon {
+            font-size: 16px;
+        }
+
+        .menu-item.active {
+            font-weight: 700;
+        }
+
+        /* --- Desktop --- */
+        .desktop {
+            width: 100%;
+            height: calc(100% - 24px);
+            margin-top: 24px;
+            position: relative;
+            padding: 20px;
+        }
+
+        .desktop-icon {
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            text-align: center;
+            gap: 5px;
+        }
+
+        .desktop-icon img {
+            width: 64px;
+            height: 64px;
+            filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.3));
+        }
+
+        .desktop-icon span {
+            color: white;
+            font-size: 12px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* --- macOS Window --- */
+        .window {
+            width: 800px;
+            height: 550px;
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255,255,255,0.1);
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        .title-bar {
+            height: 40px;
+            background: #2d2d2d;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            position: relative;
+            border-bottom: 1px solid #1a1a1a;
+            cursor: move;
+        }
+
+        .window-buttons {
+            display: flex;
+            gap: 8px;
+            position: absolute;
+            left: 15px;
+        }
+
+        .win-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+        }
+        .btn-close { background: #ff5f56; }
+        .btn-min { background: #ffbd2e; }
+        .btn-max { background: #27c93f; }
+
+        .window-title {
+            width: 100%;
+            text-align: center;
+            color: #d1d1d1;
+            font-size: 13px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .window-title img {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* --- Dolphin UI Layout --- */
+        .dolphin-toolbar {
+            height: 44px;
+            background: #383838;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 15px;
+            border-bottom: 1px solid #222;
+        }
+
+        .tool-btn {
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            min-width: 45px;
+            gap: 2px;
+        }
+
+        .tool-btn:hover {
+            color: #fff;
+            opacity: 0.8;
+        }
+
+        .tool-icon {
+            font-size: 16px;
+        }
+
+        /* --- Emulator Screen --- */
+        .emulator-screen {
+            flex: 1;
+            background: #000;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        /* Game Canvas Simulator */
+        .game-canvas {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f380f 0%, #000000 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 2px solid #ffd700;
+            display: none;
+        }
+
+        .banana-count {
+            color: #ffd700;
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Impact', sans-serif;
+        }
+
+        .game-title-screen {
+            text-align: center;
+            animation: pulse 2s infinite alternate;
+        }
+
+        .game-title-screen h1 {
+            font-size: 42px;
+            color: #ffcc00;
+            text-shadow: 3px 3px 0px #990000, -1px -1px 0px #fff;
+            margin-bottom: 10px;
+            font-weight: 900;
+        }
+
+        .game-title-screen p {
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 1px 1px 3px #000;
+        }
+
+        .dk-sprite {
+            font-size: 80px;
+            margin-bottom: 20px;
+            transition: transform 0.1s;
+        }
+
+        .controls-overlay {
+            position: absolute;
+            bottom: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #ccc;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 22px;
+            background: #2d2d2d;
+            border-top: 1px solid #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        /* --- macOS Dock --- */
+        .dock-container {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            padding: 8px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            z-index: 9999;
+        }
+
+        .dock-icon {
+            width: 50px;
+            height: 50px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            transform-origin: bottom;
+        }
+
+        .dock-icon:hover {
+            transform: scale(1.3);
+            margin: 0 10px;
+        }
+
+        .dock-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Utilities */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.03); }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Dolphin Emulator",
+      "operatingSystem": "macOS",
+      "applicationCategory": "EmulatorApplication",
+      "inLanguage": "ja",
+      "featureList": [
+        "『ドンキーコング ジャングルビート』のシミュレーション",
+        "ゲームキューブソフトの動作確認",
+        "macOS環境での実行"
+      ]
+    }
+    </script>
+</head>
+<body>
+
+    <div class="menu-bar">
+        <div class="menu-left">
+            <span class="apple-icon"></span>
+            <span class="menu-item active">Dolphin</span>
+            <span class="menu-item">ファイル</span>
+            <span class="menu-item">編集</span>
+            <span class="menu-item">表示</span>
+            <span class="menu-item">エミュレーション</span>
+            <span class="menu-item">設定</span>
+            <span class="menu-item">ヘルプ</span>
+        </div>
+        <div class="menu-right">
+            <span>JPN</span>
+            <span id="current-time">12:00</span>
+        </div>
+    </div>
+
+    <div class="desktop" id="desktop">
+        
+        <div class="desktop-icon" id="dolphin-desktop-icon">
+            <img src="https://cdn2.steamgriddb.com/icon/8146f98d564daf7f6cc87d9edcb92705/32/256x256.png" alt="Dolphin Logo">
+            <span>Dolphin</span>
+        </div>
+
+        <div class="window" id="dolphin-window">
+            <div class="title-bar" id="window-title-bar">
+                <div class="window-buttons">
+                    <button class="win-btn btn-close" id="win-close-btn"></button>
+                    <button class="win-btn btn-min"></button>
+                    <button class="win-btn btn-max"></button>
+                </div>
+                <div class="window-title">
+                    <img src="https://cdn2.steamgriddb.com/icon/8146f98d564daf7f6cc87d9edcb92705/32/256x256.png" alt="Dolphin Mini">
+                    Dolphin エミュレータ | ドンキーコング ジャングルビート (日本版)
+                </div>
+            </div>
+
+            <div class="dolphin-toolbar">
+                <button class="tool-btn" id="btn-play">
+                    <span class="tool-icon">▶</span>
+                    <span>起動</span>
+                </button>
+                <button class="tool-btn" id="btn-pause" disabled style="opacity:0.5;">
+                    <span class="tool-icon">⏸</span>
+                    <span>一時停止</span>
+                </button>
+                <button class="tool-btn" id="btn-stop" disabled style="opacity:0.5;">
+                    <span class="tool-icon">■</span>
+                    <span>停止</span>
+                </button>
+                <div style="border-left: 1px solid #555; height: 24px; margin: 0 5px;"></div>
+                <button class="tool-btn">
+                    <span class="tool-icon">⚙</span>
+                    <span>設定</span>
+                </button>
+                <button class="tool-btn">
+                    <span class="tool-icon">🎮</span>
+                    <span>コントローラ</span>
+                </button>
+            </div>
+
+            <div class="emulator-screen">
+                <div class="game-canvas" id="game-canvas">
+                    
+                    <div class="game-ui" id="game-ui">
+                        <span style="font-size:24px;">🍌</span>
+                        <span class="banana-count" id="banana-count">0000</span>
+                    </div>
+
+                    <div class="game-title-screen" id="title-screen">
+                        <div class="dk-sprite" id="dk-character">🦍</div>
+                        <h1>ドンキーコング<br>ジャングルビート</h1>
+                        <p>「起動」ボタンを押してスタート</p>
+                    </div>
+
+                    <div class="controls-overlay">
+                        操作方法: <span style="color:#ffd700">← / →</span> 移動 | <span style="color:#ffd700">スペースキー</span> 手をたたく (クラップ)
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <span id="status-left">ステータス: 待機中</span>
+                <span id="status-right">FPS: 0 / 60 (0%)</span>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="dock-container">
+        <div class="dock-icon" id="dock-dolphin">
+            <img src="https://cdn2.steamgriddb.com/icon/8146f98d564daf7f6cc87d9edcb92705/32/256x256.png" alt="Dolphin">
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const dolphinWindow = document.getElementById('dolphin-window');
+        const titleBar = document.getElementById('window-title-bar');
+        const closeBtn = document.getElementById('win-close-btn');
+        const desktopIcon = document.getElementById('dolphin-desktop-icon');
+        const dockDolphin = document.getElementById('dock-dolphin');
+        
+        const btnPlay = document.getElementById('btn-play');
+        const btnPause = document.getElementById('btn-pause');
+        const btnStop = document.getElementById('btn-stop');
+        
+        const statusLeft = document.getElementById('status-left');
+        const statusRight = document.getElementById('status-right');
+        const titleScreenText = document.querySelector('#title-screen p');
+        const gameUi = document.getElementById('game-ui');
+        const bananaCountEl = document.getElementById('banana-count');
+        const dkCharacter = document.getElementById('dk-character');
+
+        let isPlaying = false;
+        let bananaCount = 0;
+        let fpsInterval;
+
+        // --- macOS Window Interactivity ---
+        // Dragging Logic
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        titleBar.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - dolphinWindow.offsetLeft;
+            offsetY = e.clientY - dolphinWindow.offsetTop;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                dolphinWindow.style.left = `${e.clientX - offsetX}px`;
+                dolphinWindow.style.top = `${e.clientY - offsetY}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Close / Open Logic
+        closeBtn.addEventListener('click', () => {
+            dolphinWindow.classList.add('hidden');
+            stopEmulator();
+        });
+
+        desktopIcon.addEventListener('click', () => {
+            dolphinWindow.classList.remove('hidden');
+        });
+
+        dockDolphin.addEventListener('click', () => {
+            dolphinWindow.classList.toggle('hidden');
+        });
+
+        // --- Dolphin Emulator Engine Simulator ---
+        btnPlay.addEventListener('click', () => {
+            if (!isPlaying) {
+                startEmulator();
+            }
+        });
+
+        btnStop.addEventListener('click', () => {
+            if (isPlaying) {
+                stopEmulator();
+            }
+        });
+
+        function startEmulator() {
+            isPlaying = true;
+            btnPlay.disabled = true;
+            btnPlay.style.opacity = 0.5;
+            btnPause.disabled = false;
+            btnPause.style.opacity = 1;
+            btnStop.disabled = false;
+            btnStop.style.opacity = 1;
+
+            statusLeft.textContent = "エミュレーション実行中: ドンキーコング ジャングルビート";
+            titleScreenText.innerHTML = "ゲームスタート！<br><small>キーボードの左右キーで移動、スペースで叩く！</small>";
+            gameUi.style.display = "flex";
+            
+            // FPS Counter simulation
+            fpsInterval = setInterval(() => {
+                let mockFps = (59.8 + Math.random() * 0.4).toFixed(2);
+                statusRight.textContent = `FPS: ${mockFps} / 60 (100%)`;
+            }, 500);
+        }
+
+        function stopEmulator() {
+            isPlaying = false;
+            btnPlay.disabled = false;
+            btnPlay.style.opacity = 1;
+            btnPause.disabled = true;
+            btnPause.style.opacity = 0.5;
+            btnStop.disabled = true;
+            btnStop.style.opacity = 0.5;
+
+            statusLeft.textContent = "ステータス: 待機中";
+            statusRight.textContent = "FPS: 0 / 60 (0%)";
+            titleScreenText.textContent = "「起動」ボタンを押してスタート";
+            gameUi.style.display = "none";
+            bananaCount = 0;
+            bananaCountEl.textContent = "0000";
+            clearInterval(fpsInterval);
+        }
+
+        // --- Game Input Controls (Interactivity) ---
+        window.addEventListener('keydown', (e) => {
+            if (!isPlaying) return;
+
+            if (e.key === 'ArrowRight') {
+                dkCharacter.style.transform = 'translateX(20px) scaleX(1)';
+                setTimeout(() => dkCharacter.style.transform = 'translateX(0px) scaleX(1)', 100);
+                addBanana();
+            } else if (e.key === 'ArrowLeft') {
+                dkCharacter.style.transform = 'translateX(-20px) scaleX(-1)';
+                setTimeout(() => dkCharacter.style.transform = 'translateX(0px) scaleX(-1)', 100);
+                addBanana();
+            } else if (e.key === ' ' || e.code === 'Space') {
+                e.preventDefault();
+                dkCharacter.style.transform = 'scale(1.3)';
+                setTimeout(() => dkCharacter.style.transform = 'scale(1)', 150);
+                bananaCount += 10;
+                updateBananaDisplay();
+            }
+        });
+
+        function addBanana() {
+            bananaCount += 1;
+            updateBananaDisplay();
+        }
+
+        function updateBananaDisplay() {
+            bananaCountEl.textContent = String(bananaCount).padStart(4, '0');
+        }
+
+        // --- macOS Clock update ---
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('current-time').textContent = `${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>
