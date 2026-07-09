@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>macOS Simulator - F-Zero GX (Dolphin Emulator)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Custom Styling to guarantee macOS look and feel -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow: hidden;
+    }
+    .mac-window-shadow {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .blur-glass {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    /* Hide scrollbar */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* CRT Scanline & Retro Effect for game screen */
+    .crt-effect {
+      position: relative;
+    }
+    .crt-effect::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      aspect-ratio: 4/3;
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body class="h-full w-full bg-slate-900 text-white relative select-none overflow-hidden">
+
+  <!-- Desktop Wallpaper Container with premium gradients -->
+  <div id="desktop" class="absolute inset-0 w-full h-full bg-gradient-to-tr from-purple-900 via-indigo-950 to-blue-900 flex flex-col justify-between p-0 z-0">
+    
+    <!-- Top Menu Bar -->
+    <header class="w-full h-7 bg-white/10 blur-glass border-b border-white/10 flex items-center justify-between px-4 text-xs font-medium text-white/90 z-50">
+      <div class="flex items-center gap-4">
+        <!-- Apple Icon -->
+        <div class="relative group cursor-pointer">
+          <i data-lucide="apple" class="w-4 h-4 fill-white text-white"></i>
+          <div class="hidden group-hover:block absolute left-0 mt-1.5 w-56 bg-slate-900/90 blur-glass border border-white/10 rounded-lg shadow-xl py-1 text-white z-50">
+            <button onclick="toggleWindow('about-mac')" class="w-full text-left px-4 py-1.5 hover:bg-blue-600 hover:text-white transition-colors">About This Mac</button>
+            <hr class="border-white/10 my-1">
+            <button onclick="alert('System preferences simulator configured for standard setup.')" class="w-full text-left px-4 py-1.5 hover:bg-blue-600 hover:text-white transition-colors">System Settings...</button>
+            <button class="w-full text-left px-4 py-1.5 hover:bg-blue-600 hover:text-white transition-colors">App Store...</button>
+            <hr class="border-white/10 my-1">
+            <button onclick="resetSimulator()" class="w-full text-left px-4 py-1.5 hover:bg-blue-600 hover:text-white transition-colors">Restart Simulator</button>
+          </div>
+        </div>
+        <!-- Active App Title -->
+        <span class="font-bold cursor-pointer" id="active-app-menu">Finder</span>
+        <!-- Menu Bar Items -->
+        <span class="cursor-pointer hover:bg-white/10 px-2 py-0.5 rounded transition">File</span>
+        <span class="cursor-pointer hover:bg-white/10 px-2 py-0.5 rounded transition">Edit</span>
+        <span class="cursor-pointer hover:bg-white/10 px-2 py-0.5 rounded transition">View</span>
+        <span class="cursor-pointer hover:bg-white/10 px-2 py-0.5 rounded transition">Go</span>
+        <span class="cursor-pointer hover:bg-white/10 px-2 py-0.5 rounded transition">Window</span>
+        <span class="cursor-pointer hover:bg-white/10 px-2 py-0.5 rounded transition" onclick="toggleWindow('help-assistant')">Help</span>
+      </div>
+
+      <!-- Right menu status indicators -->
+      <div class="flex items-center gap-4">
+        <i data-lucide="wifi" class="w-4 h-4 cursor-pointer hover:text-white"></i>
+        <i data-lucide="battery" class="w-4 h-4 cursor-pointer hover:text-white"></i>
+        <div class="flex items-center gap-1 cursor-pointer hover:bg-white/10 px-2 py-0.5 rounded transition" onclick="toggleControlCenter()">
+          <i data-lucide="sliders" class="w-4 h-4"></i>
+        </div>
+        <div id="clock" class="font-semibold cursor-pointer">Jul 9 12:05 AM</div>
+      </div>
+    </header>
+
+    <!-- Desktop Icons Area -->
+    <main class="flex-grow p-4 grid grid-flow-col auto-cols-max grid-rows-6 gap-6 justify-start items-start relative z-10">
+      <!-- F-Zero GX Iso file on desktop -->
+      <div class="flex flex-col items-center justify-center w-20 text-center gap-1 group cursor-pointer" doubleclick="openGameInDolphin()" onclick="selectDesktopIcon(this)">
+        <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-700 rounded-xl flex items-center justify-center shadow-md relative border border-white/20 group-hover:scale-105 transition duration-150">
+          <i data-lucide="disc" class="w-8 h-8 text-white/90 animate-pulse"></i>
+          <span class="absolute bottom-1 right-1 bg-red-600 text-[8px] font-bold px-1 rounded">ISO</span>
+        </div>
+        <span class="text-xs text-white drop-shadow font-medium truncate w-full px-1 bg-black/30 rounded-md">F-Zero GX</span>
+      </div>
+
+      <!-- Macintosh HD -->
+      <div class="flex flex-col items-center justify-center w-20 text-center gap-1 group cursor-pointer" onclick="toggleWindow('finder-window')">
+        <div class="w-14 h-14 bg-slate-300 rounded-xl flex items-center justify-center shadow-md border border-white/20 group-hover:scale-105 transition duration-150">
+          <i data-lucide="hard-drive" class="w-8 h-8 text-slate-800"></i>
+        </div>
+        <span class="text-xs text-white drop-shadow font-medium truncate w-full px-1 bg-black/30 rounded-md">Macintosh HD</span>
+      </div>
+
+      <!-- Readme / Info File -->
+      <div class="flex flex-col items-center justify-center w-20 text-center gap-1 group cursor-pointer" onclick="toggleWindow('readme-window')">
+        <div class="w-14 h-14 bg-white/90 rounded-xl flex items-center justify-center shadow-md border border-white/20 group-hover:scale-105 transition duration-150">
+          <i data-lucide="file-text" class="w-8 h-8 text-blue-600"></i>
+        </div>
+        <span class="text-xs text-white drop-shadow font-medium truncate w-full px-1 bg-black/30 rounded-md">Instructions.txt</span>
+      </div>
+    </main>
+
+    <!-- macOS Control Center / Settings overlay -->
+    <div id="control-center" class="hidden absolute top-9 right-4 w-72 bg-slate-900/90 blur-glass border border-white/10 rounded-2xl p-4 shadow-2xl text-white text-xs z-50">
+      <h3 class="font-bold text-sm mb-3 flex items-center gap-2"><i data-lucide="sliders" class="w-4 h-4"></i> Control Center</h3>
+      <div class="space-y-4">
+        <!-- Sound Output Volume -->
+        <div>
+          <div class="flex justify-between mb-1">
+            <span>Audio Volume (Real-time Synthesizer)</span>
+            <span id="volume-val">75%</span>
+          </div>
+          <input type="range" id="volume-slider" min="0" max="100" value="75" class="w-full accent-blue-500 bg-white/20 h-1.5 rounded-lg appearance-none cursor-pointer">
+        </div>
+        <!-- Theme selection -->
+        <div class="flex justify-between items-center bg-white/5 p-2 rounded-xl">
+          <span>Dark Mode (UI Adaptation)</span>
+          <button onclick="toggleDarkMode()" id="dark-mode-toggle" class="bg-blue-600 px-3 py-1 rounded-full text-[10px] font-bold">ON</button>
+        </div>
+        <!-- Dolphin Core Statistics -->
+        <div class="bg-white/5 p-3 rounded-xl space-y-1 text-[10px] text-white/70">
+          <p class="font-bold text-white mb-1">Simulation Telemetry</p>
+          <div class="flex justify-between"><span>Dolphin Core Status:</span><span class="text-emerald-400">Idle / Ready</span></div>
+          <div class="flex justify-between"><span>F-Zero GX Engine:</span><span>Canvas 2.5D Mode-7</span></div>
+          <div class="flex justify-between"><span>Active Audio Channels:</span><span>4 Channels Poly</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WINDOW 1: Dolphin Emulator Main UI -->
+    <div id="dolphin-window" class="absolute left-8 top-16 w-full max-w-3xl h-[480px] bg-slate-900/95 blur-glass border border-white/20 rounded-xl flex flex-col overflow-hidden mac-window-shadow z-20" style="display: flex;">
+      <!-- Title Bar -->
+      <div class="h-10 bg-slate-950 flex items-center justify-between px-4 border-b border-white/10 cursor-move" onmousedown="dragWindow(event, 'dolphin-window')">
+        <div class="flex items-center gap-1.5">
+          <button onclick="toggleWindow('dolphin-window')" class="w-3 h-3 bg-red-500 rounded-full hover:bg-red-600 transition flex items-center justify-center text-[8px] text-red-950 font-bold">×</button>
+          <button onclick="minimizeWindow('dolphin-window')" class="w-3 h-3 bg-yellow-500 rounded-full hover:bg-yellow-600 transition flex items-center justify-center text-[8px] text-yellow-950 font-bold">-</button>
+          <button onclick="maximizeWindow('dolphin-window')" class="w-3 h-3 bg-green-500 rounded-full hover:bg-green-600 transition flex items-center justify-center text-[8px] text-green-950 font-bold">+</button>
+        </div>
+        <span class="text-xs font-semibold text-white/80 flex items-center gap-2">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Dolphin_Emulator_Logo_Refresh.svg/960px-Dolphin_Emulator_Logo_Refresh.svg.png" class="w-4 h-4 object-contain" alt="Dolphin Logo">
+          Dolphin Emulator (5.0-FZERO-SIM)
+        </span>
+        <div class="w-12"></div>
+      </div>
+
+      <!-- Dolphin Toolbar -->
+      <div class="bg-slate-900/80 p-2 border-b border-white/10 flex items-center justify-between text-xs overflow-x-auto gap-2">
+        <div class="flex items-center gap-1.5">
+          <!-- Open Button -->
+          <button onclick="toggleWindow('finder-window')" class="flex flex-col items-center px-3 py-1 hover:bg-white/10 rounded transition text-white/90">
+            <i data-lucide="folder-open" class="w-5 h-5 text-yellow-400"></i>
+            <span class="text-[10px] mt-0.5">Open</span>
+          </button>
+          <div class="w-px h-8 bg-white/10 mx-1"></div>
+          <!-- Play Game Button -->
+          <button id="btn-play-game" onclick="startGame()" class="flex flex-col items-center px-3 py-1 hover:bg-emerald-600/30 rounded transition text-emerald-400">
+            <i data-lucide="play" class="w-5 h-5 fill-emerald-500 text-emerald-400"></i>
+            <span class="text-[10px] mt-0.5">Play</span>
+          </button>
+          <!-- Stop Game Button -->
+          <button id="btn-stop-game" onclick="stopGame()" class="flex flex-col items-center px-3 py-1 hover:bg-red-600/30 rounded transition text-red-400 opacity-55 cursor-not-allowed" disabled>
+            <i data-lucide="square" class="w-5 h-5 fill-red-500 text-red-400"></i>
+            <span class="text-[10px] mt-0.5">Stop</span>
+          </button>
+          <!-- Refresh -->
+          <button class="flex flex-col items-center px-3 py-1 hover:bg-white/10 rounded transition text-white/90">
+            <i data-lucide="rotate-cw" class="w-5 h-5 text-indigo-400"></i>
+            <span class="text-[10px] mt-0.5">Refresh</span>
+          </button>
+          <div class="w-px h-8 bg-white/10 mx-1"></div>
+          <!-- Config Button -->
+          <button onclick="toggleConfigTab('config-panel')" class="flex flex-col items-center px-3 py-1 hover:bg-white/10 rounded transition text-white/90">
+            <i data-lucide="settings" class="w-5 h-5 text-gray-400"></i>
+            <span class="text-[10px] mt-0.5">Config</span>
+          </button>
+          <!-- Graphics Button -->
+          <button onclick="toggleConfigTab('graphics-panel')" class="flex flex-col items-center px-3 py-1 hover:bg-white/10 rounded transition text-white/90">
+            <i data-lucide="monitor" class="w-5 h-5 text-cyan-400"></i>
+            <span class="text-[10px] mt-0.5">Graphics</span>
+          </button>
+          <!-- Controller Button -->
+          <button onclick="toggleConfigTab('controller-panel')" class="flex flex-col items-center px-3 py-1 hover:bg-white/10 rounded transition text-white/90">
+            <i data-lucide="gamepad-2" class="w-5 h-5 text-amber-500"></i>
+            <span class="text-[10px] mt-0.5">Controllers</span>
+          </button>
+        </div>
+        <!-- Frame Rate and stats in tool bar -->
+        <div class="text-[10px] text-white/60 text-right pr-2">
+          <div>Speed: <span class="text-white font-semibold" id="dolphin-emulation-speed">100%</span></div>
+          <div>FPS: <span class="text-white font-semibold animate-pulse" id="dolphin-emulation-fps">60.0</span></div>
+        </div>
+      </div>
+
+      <!-- Dolphin Game List Table & Settings Layout -->
+      <div class="flex-grow flex overflow-hidden">
+        
+        <!-- Main Game List View -->
+        <div class="flex-grow flex flex-col bg-slate-950 overflow-y-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-900 border-b border-white/10 text-white/60">
+                <th class="p-2.5 font-semibold">Game Title</th>
+                <th class="p-2.5 font-semibold">ID</th>
+                <th class="p-2.5 font-semibold">Format</th>
+                <th class="p-2.5 font-semibold">Rating</th>
+                <th class="p-2.5 font-semibold">File Size</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+              <!-- F-Zero GX Game Entry (Clickable) -->
+              <tr id="fzero-game-row" onclick="selectGame('fzero')" class="hover:bg-blue-600/20 bg-blue-600/10 border-l-4 border-blue-500 cursor-pointer transition">
+                <td class="p-3 flex items-center gap-3">
+                  <div class="w-12 h-8 bg-indigo-900 rounded overflow-hidden flex items-center justify-center text-[9px] border border-white/20 font-bold tracking-widest relative">
+                    <span class="text-cyan-400">F-ZERO</span>
+                  </div>
+                  <div>
+                    <div class="font-bold text-white">F-Zero GX</div>
+                    <div class="text-[10px] text-white/50">Nintendo GameCube (2003)</div>
+                  </div>
+                </td>
+                <td class="p-3 font-mono text-white/70">GFZE01</td>
+                <td class="p-3 text-slate-400">ISO (American)</td>
+                <td class="p-3 text-yellow-400 font-bold">★★★★★</td>
+                <td class="p-3 text-white/80">1.35 GB</td>
+              </tr>
+              <!-- Dummy items for realism -->
+              <tr class="hover:bg-white/5 cursor-pointer transition opacity-50">
+                <td class="p-3 flex items-center gap-3">
+                  <div class="w-12 h-8 bg-red-950 rounded flex items-center justify-center text-[9px] border border-white/20 font-bold">
+                    SMASH
+                  </div>
+                  <div>
+                    <div class="font-semibold text-white">Super Smash Bros. Melee</div>
+                    <div class="text-[10px] text-white/50">Nintendo GameCube (2001)</div>
+                  </div>
+                </td>
+                <td class="p-3 font-mono text-white/70">GALE01</td>
+                <td class="p-3 text-slate-400">ISO</td>
+                <td class="p-3 text-yellow-400">★★★★★</td>
+                <td class="p-3 text-white/80">1.20 GB</td>
+              </tr>
+              <tr class="hover:bg-white/5 cursor-pointer transition opacity-50">
+                <td class="p-3 flex items-center gap-3">
+                  <div class="w-12 h-8 bg-emerald-950 rounded flex items-center justify-center text-[8px] border border-white/20 font-bold">
+                    ZELDA
+                  </div>
+                  <div>
+                    <div class="font-semibold text-white">Legend of Zelda: Wind Waker</div>
+                    <div class="text-[10px] text-white/50">Nintendo GameCube (2002)</div>
+                  </div>
+                </td>
+                <td class="p-3 font-mono text-white/70">GZLE01</td>
+                <td class="p-3 text-slate-400">ISO</td>
+                <td class="p-3 text-yellow-400">★★★★★</td>
+                <td class="p-3 text-white/80">1.10 GB</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="flex-grow p-4 text-center text-xs text-white/40 flex flex-col items-center justify-center gap-2">
+            <i data-lucide="mouse-pointer" class="w-6 h-6"></i>
+            <p>Double click on <span class="text-blue-400 font-bold">F-Zero GX</span> to start the interactive simulation</p>
+          </div>
+        </div>
+
+        <!-- Sidebar Config Panels (Dynamic Drawer) -->
+        <div id="dolphin-config-sidebar" class="w-64 bg-slate-900 border-l border-white/10 p-3 text-xs hidden flex-col justify-between">
+          <!-- Config Sub-panel: Dolphin Engine settings -->
+          <div id="config-panel" class="space-y-3">
+            <h4 class="font-bold border-b border-white/10 pb-1.5 text-white/80">Emulation Configuration</h4>
+            <div>
+              <label class="block text-[10px] text-white/50 mb-1">Dolphin CPU Core</label>
+              <select class="w-full bg-slate-800 border border-white/10 rounded p-1 text-white">
+                <button>JIT Recompiler (Recommended)</button>
+                <button>Cached Interpreter</button>
+              </select>
+            </div>
+            <div>
+              <label class="flex items-center gap-1.5 mt-2 cursor-pointer">
+                <input type="checkbox" id="cheat-codes-chk" checked class="rounded border-white/10 text-blue-600 focus:ring-0">
+                <span>Enable Cheat Codes (Unlimited Boost)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Graphics Settings Panel -->
+          <div id="graphics-panel" class="space-y-3 hidden">
+            <h4 class="font-bold border-b border-white/10 pb-1.5 text-white/80">Graphics Renderer</h4>
+            <div>
+              <label class="block text-[10px] text-white/50 mb-1">Backend API</label>
+              <select class="w-full bg-slate-800 border border-white/10 rounded p-1 text-white">
+                <option>WebGL 2.0 (Modern)</option>
+                <option>Metal (macOS Optimized)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-white/50 mb-1">Aspect Ratio Mode</label>
+              <select id="setting-aspect-ratio" onchange="updateAspectHack()" class="w-full bg-slate-800 border border-white/10 rounded p-1 text-white">
+                <option value="4:3">Force 4:3 (Classic GameCube)</option>
+                <option value="16:9" selected>Widescreen Hack (16:9 widescreen)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-white/50 mb-1">Internal Resolution</label>
+              <select id="resolution-multiplier" class="w-full bg-slate-800 border border-white/10 rounded p-1 text-white">
+                <option value="1">1x (Native 640x480)</option>
+                <option value="2">2x (720p HD)</option>
+                <option value="3" selected>3x (1080p Full HD)</option>
+                <option value="4">4x (4K UHD Extreme)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Controllers Mapping Panel -->
+          <div id="controller-panel" class="space-y-3 hidden">
+            <h4 class="font-bold border-b border-white/10 pb-1.5 text-white/80">Controller Mapping</h4>
+            <div class="text-[10px] text-white/60 bg-white/5 p-2 rounded leading-relaxed">
+              <p class="font-bold text-white mb-1">Keyboard Controls:</p>
+              <div class="flex justify-between"><span>Steer:</span><span class="font-bold text-cyan-400">Left / Right Arrows (or A/D)</span></div>
+              <div class="flex justify-between"><span>Accelerate:</span><span class="font-bold text-cyan-400">Up Arrow (or W)</span></div>
+              <div class="flex justify-between"><span>Brake / Reverse:</span><span class="font-bold text-cyan-400">Down Arrow (or S)</span></div>
+              <div class="flex justify-between"><span>Space Booster:</span><span class="font-bold text-cyan-400">SPACEBAR</span></div>
+              <div class="flex justify-between"><span>Camera View:</span><span class="font-bold text-cyan-400">C Key</span></div>
+            </div>
+          </div>
+
+          <!-- Sidebar Footer Actions -->
+          <button onclick="toggleConfigTab('')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded transition mt-4">
+            Close Panel
+          </button>
+        </div>
+      </div>
+
+      <!-- Dolphin Status Bar -->
+      <div class="h-6 bg-slate-950 border-t border-white/10 flex items-center justify-between px-3 text-[10px] text-white/50">
+        <span>ISO Directory: /Volumes/Macintosh HD/Games/</span>
+        <span class="text-green-500 font-bold flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span>
+          Dolphin JIT Core Active (GCC-9)
+        </span>
+      </div>
+    </div>
+
+    <!-- WINDOW 2: F-ZERO GX Active Game Simulation Window -->
+    <div id="game-window" class="absolute left-1/2 top-10 -translate-x-1/2 w-full max-w-4xl bg-black border border-indigo-500/50 rounded-xl overflow-hidden mac-window-shadow hidden flex-col z-30">
+      <!-- Emulator/Game Title Bar -->
+      <div class="h-10 bg-slate-950 flex items-center justify-between px-4 border-b border-indigo-500/20 cursor-move" onmousedown="dragWindow(event, 'game-window')">
+        <div class="flex items-center gap-1.5">
+          <button onclick="stopGame()" class="w-3 h-3 bg-red-500 rounded-full hover:bg-red-600 transition flex items-center justify-center text-[8px] text-red-950 font-bold">×</button>
+          <button class="w-3 h-3 bg-yellow-500 rounded-full opacity-50 cursor-not-allowed" disabled></button>
+          <button onclick="toggleGameFullscreen()" class="w-3 h-3 bg-green-500 rounded-full hover:bg-green-600 transition flex items-center justify-center text-[8px] text-green-950 font-bold">⤢</button>
+        </div>
+        <span class="text-xs font-bold text-indigo-400 flex items-center gap-2 tracking-widest uppercase">
+          <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+          F-Zero GX Engine (Active)
+        </span>
+        <div class="w-12 text-right text-[10px] text-white/40">GCN-60FPS</div>
+      </div>
+
+      <!-- Game Virtual Display (Game Cube Screen Aspect ratio) -->
+      <div class="relative w-full bg-slate-950 flex items-center justify-center border-b border-white/10" id="game-display-container">
+        
+        <!-- Booting Loader Graphic -->
+        <div id="game-boot-loader" class="absolute inset-0 bg-black flex flex-col items-center justify-center gap-4 z-40 transition-opacity duration-1000">
+          <div class="w-16 h-16 border-4 border-indigo-500 border-t-pink-500 rounded-full animate-spin"></div>
+          <div class="text-center font-mono">
+            <h1 class="text-xl font-bold text-white tracking-widest uppercase">Nintendo GameCube</h1>
+            <p class="text-xs text-indigo-400 mt-1">Booting F-Zero GX from disc storage...</p>
+          </div>
+        </div>
+
+        <!-- Custom F-Zero Track Canvas Game Engine -->
+        <div id="game-canvas-wrapper" class="w-full aspect-video crt-effect relative">
+          <canvas id="fzero-canvas" class="w-full h-full bg-slate-950"></canvas>
+
+          <!-- On-screen UI Overlay (Ultra Futuristic style F-Zero) -->
+          <div class="absolute inset-0 p-4 flex flex-col justify-between pointer-events-none text-white font-mono select-none">
+            
+            <!-- Top HUD: Laps, Energy Bar, Speed, and Boost Status -->
+            <div class="flex justify-between items-start">
+              <!-- Left HUD: Position and Laps -->
+              <div class="bg-black/60 border border-cyan-500/30 p-2 rounded-lg blur-sm-glass">
+                <div class="text-[10px] text-cyan-400 uppercase">POSITION</div>
+                <div class="text-2xl font-bold italic" id="hud-pos">05<span class="text-sm">/30</span></div>
+                <div class="text-[10px] text-pink-400 uppercase mt-1">LAP</div>
+                <div class="text-xl font-bold italic" id="hud-lap">1<span class="text-sm">/3</span></div>
+              </div>
+
+              <!-- Center HUD: Energy Gauge and Boost Unlocked -->
+              <div class="flex flex-col items-center gap-1 bg-black/60 border border-purple-500/30 p-2 rounded-lg blur-sm-glass max-w-xs w-52">
+                <div class="flex justify-between w-full text-[9px] text-white/80">
+                  <span class="text-emerald-400">ENERGY GAUGE</span>
+                  <span id="hud-energy-percent" class="font-bold text-emerald-300">100%</span>
+                </div>
+                <!-- Energy bar with glowing gradient -->
+                <div class="w-full h-3 bg-slate-900 border border-slate-700 rounded-full overflow-hidden p-0.5">
+                  <div id="hud-energy-bar" class="h-full bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-400 rounded-full transition-all duration-100" style="width: 100%;"></div>
+                </div>
+                <!-- Boost Activation Tip -->
+                <div id="boost-alert" class="text-[9px] text-pink-500 animate-pulse uppercase tracking-wider font-bold mt-1">
+                  BOOST LOCKED (UNLOCKED IN LAP 2)
+                </div>
+              </div>
+
+              <!-- Right HUD: Velocity Display -->
+              <div class="bg-black/60 border border-cyan-500/30 p-2 rounded-lg text-right blur-sm-glass">
+                <div class="text-[10px] text-pink-400 uppercase">VELOCITY</div>
+                <div class="text-3xl font-bold italic text-cyan-300" id="hud-speed">0 <span class="text-xs">km/h</span></div>
+                <div class="text-[9px] text-white/50" id="hud-boost-msg">DRIVE SAFELY</div>
+              </div>
+            </div>
+
+            <!-- On-Screen Alerts / Speed indicators -->
+            <div class="absolute inset-x-0 bottom-24 flex flex-col items-center justify-center gap-1">
+              <div id="game-checkpoint-msg" class="text-xl font-bold text-yellow-400 tracking-wider bg-black/80 px-4 py-1 rounded border border-yellow-500/40 hidden uppercase animate-bounce">
+                CHECKPOINT RECONSTRUCTION!
+              </div>
+              <div id="game-boost-flash" class="text-3xl font-black italic text-cyan-400 bg-cyan-950/80 border-2 border-cyan-400 px-6 py-1 rounded-lg shadow-cyan-500/50 shadow-xl hidden uppercase animate-ping">
+                BOOST MAXIMUM!
+              </div>
+            </div>
+
+            <!-- Virtual Controller Overlay for Mobile/Touch play -->
+            <div class="absolute inset-x-0 bottom-4 flex justify-between px-6 pointer-events-auto md:hidden">
+              <div class="flex gap-2">
+                <button id="touch-left" class="w-14 h-14 bg-white/20 hover:bg-white/40 blur-glass text-white font-bold rounded-full flex items-center justify-center active:scale-95 transition text-lg"><i data-lucide="arrow-left" class="w-6 h-6"></i></button>
+                <button id="touch-right" class="w-14 h-14 bg-white/20 hover:bg-white/40 blur-glass text-white font-bold rounded-full flex items-center justify-center active:scale-95 transition text-lg"><i data-lucide="arrow-right" class="w-6 h-6"></i></button>
+              </div>
+              <div class="flex gap-2">
+                <button id="touch-boost" class="w-14 h-14 bg-pink-600/80 active:bg-pink-700 hover:scale-105 border border-pink-400 blur-glass text-white font-bold rounded-full flex items-center justify-center active:scale-95 transition text-xs">BOOST</button>
+                <button id="touch-accel" class="w-14 h-14 bg-cyan-500/80 active:bg-cyan-600 hover:scale-105 border border-cyan-400 blur-glass text-white font-bold rounded-full flex items-center justify-center active:scale-95 transition text-xs">GAS</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Bar -->
+      <div class="bg-slate-900 p-2 flex items-center justify-between text-xs px-4">
+        <div class="text-white/60">Press <span class="bg-white/10 px-1.5 py-0.5 rounded font-bold text-white text-[10px]">W / Up Arrow</span> to steer & accelerate. <span class="bg-white/10 px-1.5 py-0.5 rounded font-bold text-white text-[10px]">Space</span> to boost.</div>
+        <div class="flex items-center gap-3">
+          <button onclick="toggleGameSound()" class="hover:bg-white/10 p-1.5 rounded text-indigo-400" title="Toggle Synth Audio Loop">
+            <i data-lucide="volume-2" id="sound-state-icon" class="w-4 h-4"></i>
+          </button>
+          <button onclick="resetGame()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1 rounded transition text-[10px]">
+            Reset Race
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WINDOW 3: macOS Finder App Window -->
+    <div id="finder-window" class="absolute left-1/4 top-1/4 w-[540px] h-[340px] bg-slate-900/90 blur-glass border border-white/20 rounded-xl overflow-hidden mac-window-shadow hidden flex-col z-20">
+      <div class="h-10 bg-slate-950 flex items-center justify-between px-4 border-b border-white/10 cursor-move" onmousedown="dragWindow(event, 'finder-window')">
+        <div class="flex items-center gap-1.5">
+          <button onclick="toggleWindow('finder-window')" class="w-3 h-3 bg-red-500 rounded-full hover:bg-red-600 transition flex items-center justify-center text-[8px] text-red-950 font-bold">×</button>
+          <button onclick="minimizeWindow('finder-window')" class="w-3 h-3 bg-yellow-500 rounded-full hover:bg-yellow-600 transition flex items-center justify-center text-[8px] text-yellow-950 font-bold">-</button>
+          <button class="w-3 h-3 bg-green-500 rounded-full opacity-50 cursor-not-allowed" disabled></button>
+        </div>
+        <span class="text-xs font-semibold text-white/80 flex items-center gap-1.5"><i data-lucide="folder" class="w-3.5 h-3.5"></i> Finder</span>
+        <div class="w-12"></div>
+      </div>
+
+      <div class="flex-grow flex overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <div class="w-36 bg-slate-950/70 p-3 border-r border-white/10 text-[11px] space-y-3">
+          <div>
+            <span class="text-[9px] text-white/40 tracking-wider uppercase font-bold">Favorites</span>
+            <ul class="space-y-1 mt-1 text-white/80">
+              <li class="p-1 hover:bg-white/10 rounded cursor-pointer flex items-center gap-1.5 bg-white/5 font-semibold text-white"><i data-lucide="monitor" class="w-3 h-3 text-indigo-400"></i> Desktop</li>
+              <li class="p-1 hover:bg-white/10 rounded cursor-pointer flex items-center gap-1.5"><i data-lucide="folder" class="w-3 h-3 text-yellow-400"></i> Games</li>
+              <li class="p-1 hover:bg-white/10 rounded cursor-pointer flex items-center gap-1.5"><i data-lucide="download" class="w-3 h-3 text-cyan-400"></i> Downloads</li>
+            </ul>
+          </div>
+          <div>
+            <span class="text-[9px] text-white/40 tracking-wider uppercase font-bold">Devices</span>
+            <ul class="space-y-1 mt-1 text-white/80">
+              <li class="p-1 hover:bg-white/10 rounded cursor-pointer flex items-center gap-1.5"><i data-lucide="hard-drive" class="w-3 h-3 text-slate-400"></i> Macintosh HD</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Contents Area -->
+        <div class="flex-grow p-4 bg-slate-900/40 text-xs">
+          <div class="grid grid-cols-3 gap-4">
+            <!-- Game ISO inside Finder -->
+            <div class="flex flex-col items-center p-2 rounded-lg hover:bg-white/10 cursor-pointer text-center group transition" onclick="startGame()">
+              <i data-lucide="disc" class="w-10 h-10 text-cyan-400 group-hover:scale-110 transition duration-150"></i>
+              <span class="font-bold text-white mt-1.5 block">F-Zero GX.iso</span>
+              <span class="text-[10px] text-white/40">1.35 GB</span>
+            </div>
+            <!-- Dolphin App in finder -->
+            <div class="flex flex-col items-center p-2 rounded-lg hover:bg-white/10 cursor-pointer text-center group transition" onclick="toggleWindow('dolphin-window')">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Dolphin_Emulator_Logo_Refresh.svg/960px-Dolphin_Emulator_Logo_Refresh.svg.png" class="w-10 h-10 object-contain group-hover:scale-110 transition duration-150" alt="Dolphin logo">
+              <span class="font-bold text-white mt-1.5 block">Dolphin.app</span>
+              <span class="text-[10px] text-white/40">34 MB</span>
+            </div>
+            <!-- Saved stats document -->
+            <div class="flex flex-col items-center p-2 rounded-lg hover:bg-white/10 cursor-pointer text-center group transition" onclick="toggleWindow('readme-window')">
+              <i data-lucide="file-text" class="w-10 h-10 text-emerald-400 group-hover:scale-110 transition duration-150"></i>
+              <span class="font-bold text-white mt-1.5 block">GameInfo.txt</span>
+              <span class="text-[10px] text-white/40">12 KB</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WINDOW 4: Instructions / README Document Window -->
+    <div id="readme-window" class="absolute left-1/3 top-1/3 w-[440px] h-[300px] bg-slate-900/90 blur-glass border border-white/20 rounded-xl overflow-hidden mac-window-shadow hidden flex-col z-20">
+      <div class="h-10 bg-slate-950 flex items-center justify-between px-4 border-b border-white/10 cursor-move" onmousedown="dragWindow(event, 'readme-window')">
+        <div class="flex items-center gap-1.5">
+          <button onclick="toggleWindow('readme-window')" class="w-3 h-3 bg-red-500 rounded-full hover:bg-red-600 transition flex items-center justify-center text-[8px] text-red-950 font-bold">×</button>
+          <button onclick="minimizeWindow('readme-window')" class="w-3 h-3 bg-yellow-500 rounded-full hover:bg-yellow-600 transition flex items-center justify-center text-[8px] text-yellow-950 font-bold">-</button>
+          <button class="w-3 h-3 bg-green-500 rounded-full opacity-50 cursor-not-allowed" disabled></button>
+        </div>
+        <span class="text-xs font-semibold text-white/80">Instructions.txt - TextEdit</span>
+        <div class="w-12"></div>
+      </div>
+
+      <div class="flex-grow p-4 bg-white text-slate-800 text-xs overflow-y-auto font-mono leading-relaxed select-text">
+        <h2 class="text-sm font-bold text-slate-950 border-b border-slate-200 pb-1 mb-2 uppercase">F-Zero GX Simulation Readme</h2>
+        <p class="mb-2"><strong>Platform:</strong> Dolphin Emulator 5.0 (Nintendo GameCube)</p>
+        <p class="mb-2"><strong>About F-Zero GX (2003):</strong> Co-developed by Nintendo and SEGA (Amusement Vision), F-Zero GX runs at a blistering 60 FPS on original hardware. It is known for its incredible speed, high skill ceiling, and amazing sci-fi soundtrack.</p>
+        <p class="mb-2 font-bold text-indigo-700">CONTROLS IN THIS SIMULATOR:</p>
+        <ul class="list-disc pl-4 space-y-1 mb-3 text-slate-700">
+          <li><strong>Steering:</strong> W / A / S / D keys or Arrow Keys</li>
+          <li><strong>Braking:</strong> Down Arrow / S Key (restores fine traction)</li>
+          <li><strong>Boost Drive:</strong> Spacebar (unlocked on Lap 2 onwards; consumes Shield energy)</li>
+          <li><strong>Camera View Toggle:</strong> Press "C" to cycle perspective cameras!</li>
+        </ul>
+        <p class="text-slate-500 text-[10px]">Use the macOS Siri Help assistant (located in menu bar or Siri Assistant window) to query advice about F-Zero GX's complex speedrunning mechanics like MST, Snaking, or custom ship setups.</p>
+      </div>
+    </div>
+
+    <!-- WINDOW 5: About This Mac Panel -->
+    <div id="about-mac" class="absolute left-1/3 top-1/4 w-[340px] h-[220px] bg-slate-950 border border-white/20 rounded-xl overflow-hidden mac-window-shadow hidden flex-col z-50">
+      <div class="h-8 bg-slate-950/40 flex items-center justify-between px-3">
+        <button onclick="toggleWindow('about-mac')" class="w-3 h-3 bg-red-500 rounded-full hover:bg-red-600 transition flex items-center justify-center text-[8px] text-red-950 font-bold">×</button>
+        <div class="w-12"></div>
+      </div>
+      <div class="flex-grow flex flex-col items-center justify-center text-center p-4">
+        <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-2">
+          <i data-lucide="apple" class="w-7 h-7 text-white fill-white"></i>
+        </div>
+        <h2 class="text-sm font-bold">macOS F-Zero Edition</h2>
+        <p class="text-[10px] text-white/50">Version 14.5.2 Pro-Racer</p>
+        
+        <div class="mt-3 text-left w-full space-y-1 text-[10px] border-t border-white/10 pt-3">
+          <div class="flex justify-between"><span>Processor:</span><span class="text-white/80 font-mono">Apple M3 Pro Extreme</span></div>
+          <div class="flex justify-between"><span>Memory:</span><span class="text-white/80 font-mono">36 GB Unified LPDDR5X</span></div>
+          <div class="flex justify-between"><span>Graphics Engine:</span><span class="text-indigo-400 font-semibold font-mono">F-Zero GX Canvas 2.5D</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WINDOW 6: Gemini-powered AI Help & Speedrun Assistant -->
+    <div id="help-assistant" class="absolute right-8 top-16 w-[400px] h-[480px] bg-slate-900/95 blur-glass border border-white/20 rounded-xl overflow-hidden mac-window-shadow hidden flex-col z-35">
+      <div class="h-10 bg-slate-950 flex items-center justify-between px-4 border-b border-white/10 cursor-move" onmousedown="dragWindow(event, 'help-assistant')">
+        <div class="flex items-center gap-1.5">
+          <button onclick="toggleWindow('help-assistant')" class="w-3 h-3 bg-red-500 rounded-full hover:bg-red-600 transition flex items-center justify-center text-[8px] text-red-950 font-bold">×</button>
+          <button onclick="minimizeWindow('help-assistant')" class="w-3 h-3 bg-yellow-500 rounded-full hover:bg-yellow-600 transition flex items-center justify-center text-[8px] text-yellow-950 font-bold">-</button>
+          <button class="w-3 h-3 bg-green-500 rounded-full opacity-50 cursor-not-allowed" disabled></button>
+        </div>
+        <span class="text-xs font-bold text-indigo-400 flex items-center gap-1.5"><i data-lucide="bot" class="w-4 h-4"></i> Siri Speedrun Copilot</span>
+        <div class="w-12"></div>
+      </div>
+
+      <!-- Copilot Interface -->
+      <div class="flex-grow flex flex-col justify-between overflow-hidden bg-slate-950/70">
+        <!-- Message list -->
+        <div id="copilot-messages" class="flex-grow p-3 overflow-y-auto space-y-3 text-xs leading-relaxed">
+          <div class="bg-indigo-600/10 border border-indigo-500/20 p-3 rounded-lg">
+            <p class="font-bold text-indigo-400 mb-1 flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> F-Zero Simulation Intelligence</p>
+            <p>Welcome, Captain! I'm your real-time macOS Speedrun AI Assistant. You can ask me anything about <strong>F-Zero GX</strong> physics, custom builds, custom setups, strategy, or how to configure Dolphin for optimized gameplay!</p>
+            <div class="mt-2 grid grid-cols-2 gap-1.5 text-[10px]">
+              <button onclick="presetQuery('How do I pull off a Momentum Turbo Slide (MTS) in F-Zero GX?')" class="bg-white/5 hover:bg-white/10 p-1.5 rounded text-left truncate">1. How to MTS?</button>
+              <button onclick="presetQuery('What are the best custom craft setups in F-Zero GX?')" class="bg-white/5 hover:bg-white/10 p-1.5 rounded text-left truncate">2. Best Custom Craft</button>
+              <button onclick="presetQuery('Tell me the lore of Captain Falcon and Mute City.')" class="bg-white/5 hover:bg-white/10 p-1.5 rounded text-left truncate">3. Captain Falcon Lore</button>
+              <button onclick="presetQuery('Optimize Dolphin Emulator settings for high speed runs')" class="bg-white/5 hover:bg-white/10 p-1.5 rounded text-left truncate">4. Optimize Dolphin</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Prompt Warning/Settings indicator -->
+        <div class="px-3 py-1 bg-white/5 border-t border-b border-white/5 text-[9px] text-white/50 flex justify-between items-center">
+          <span>Model: gemini-2.5-flash-preview-09-2025</span>
+          <span class="text-emerald-400">Direct Connection Connected</span>
+        </div>
+
+        <!-- Chat Form -->
+        <form id="copilot-form" onsubmit="handleCopilotSubmit(event)" class="p-2.5 bg-slate-950 flex gap-1.5 items-center">
+          <input type="text" id="copilot-input" placeholder="Ask about MTS, snaking, custom parts, lore..." class="flex-grow bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 transition">
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white p-2 rounded-lg transition">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- macOS Desktop Dock (Bottom of Screen) -->
+    <footer class="w-full h-16 mb-2 flex justify-center items-end pointer-events-none relative z-40">
+      <div id="dock" class="pointer-events-auto flex items-end gap-3 px-4 py-1.5 bg-white/10 dark:bg-black/20 blur-glass border border-white/20 rounded-2xl shadow-xl transition-all duration-300">
+        
+        <!-- App: Finder -->
+        <div class="group relative flex flex-col items-center cursor-pointer" onclick="toggleWindow('finder-window')">
+          <span class="absolute -top-8 bg-slate-950/80 text-[10px] text-white px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Finder</span>
+          <div class="w-12 h-12 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-xl flex items-center justify-center text-white border border-white/20 group-hover:scale-110 group-hover:-translate-y-2 transition duration-200">
+            <i data-lucide="folder" class="w-6 h-6"></i>
+          </div>
+          <div class="w-1 h-1 bg-white/60 rounded-full mt-1" id="dot-finder"></div>
+        </div>
+
+        <!-- App: Dolphin -->
+        <div class="group relative flex flex-col items-center cursor-pointer animate-bounce" onclick="toggleWindow('dolphin-window')">
+          <span class="absolute -top-8 bg-slate-950/80 text-[10px] text-white px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Dolphin Emulator</span>
+          <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center border border-white/20 group-hover:scale-110 group-hover:-translate-y-2 transition duration-200 p-1 bg-white">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Dolphin_Emulator_Logo_Refresh.svg/960px-Dolphin_Emulator_Logo_Refresh.svg.png" class="w-full h-full object-contain" alt="Dolphin Logo">
+          </div>
+          <div class="w-1 h-1 bg-white rounded-full mt-1" id="dot-dolphin"></div>
+        </div>
+
+        <!-- App: Interactive Copilot (Siri) -->
+        <div class="group relative flex flex-col items-center cursor-pointer" onclick="toggleWindow('help-assistant')">
+          <span class="absolute -top-8 bg-slate-950/80 text-[10px] text-white px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Siri Assistant</span>
+          <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white border border-white/20 group-hover:scale-110 group-hover:-translate-y-2 transition duration-200">
+            <i data-lucide="sparkles" class="w-6 h-6 animate-pulse"></i>
+          </div>
+          <div class="w-1 h-1 bg-white/60 rounded-full mt-1" id="dot-help"></div>
+        </div>
+
+        <!-- App: Document Help -->
+        <div class="group relative flex flex-col items-center cursor-pointer" onclick="toggleWindow('readme-window')">
+          <span class="absolute -top-8 bg-slate-950/80 text-[10px] text-white px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Manual</span>
+          <div class="w-12 h-12 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-xl flex items-center justify-center text-white border border-white/20 group-hover:scale-110 group-hover:-translate-y-2 transition duration-200">
+            <i data-lucide="book-open" class="w-6 h-6"></i>
+          </div>
+          <div class="w-1 h-1 bg-white/60 rounded-full mt-1" id="dot-readme"></div>
+        </div>
+
+        <!-- App: Trash -->
+        <div class="group relative flex flex-col items-center cursor-pointer" onclick="alert('Emptying macOS simulated trash bin!')">
+          <span class="absolute -top-8 bg-slate-950/80 text-[10px] text-white px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Trash</span>
+          <div class="w-12 h-12 bg-slate-700/50 rounded-xl flex items-center justify-center text-white/70 border border-white/10 group-hover:scale-110 group-hover:-translate-y-2 transition duration-200">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+          </div>
+          <div class="w-1 h-1 bg-transparent rounded-full mt-1"></div>
+        </div>
+
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Game and App Logic Setup -->
+  <script>
+    // System Constants
+    const apiKey = ""; // Implicitly injected at runtime by preview ecosystem
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-fzero-sim';
+
+    // Desktop Window Positioning & Drag Management
+    let dragElement = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let zIndexCounter = 100;
+
+    function selectDesktopIcon(el) {
+      document.querySelectorAll('#desktop main div').forEach(item => item.classList.remove('bg-white/20'));
+      el.classList.add('bg-white/20');
+    }
+
+    function toggleWindow(id) {
+      const win = document.getElementById(id);
+      if (!win) return;
+      if (win.style.display === 'none' || win.classList.contains('hidden')) {
+        win.style.display = 'flex';
+        win.classList.remove('hidden');
+        bringToFront(win);
+        // Active app indicator
+        let appMenuName = "Finder";
+        if (id === 'dolphin-window') appMenuName = "Dolphin Emulator";
+        else if (id === 'game-window') appMenuName = "F-Zero GX";
+        else if (id === 'help-assistant') appMenuName = "Siri Assistant";
+        else if (id === 'readme-window') appMenuName = "TextEdit";
+        document.getElementById('active-app-menu').textContent = appMenuName;
+      } else {
+        win.style.display = 'none';
+        win.classList.add('hidden');
+      }
+    }
+
+    function minimizeWindow(id) {
+      toggleWindow(id);
+    }
+
+    function maximizeWindow(id) {
+      const win = document.getElementById(id);
+      if (!win) return;
+      if (win.style.width === '100vw' || win.style.width === '100%') {
+        win.style.width = '';
+        win.style.height = '';
+        win.style.left = '';
+        win.style.top = '';
+      } else {
+        win.style.width = '100vw';
+        win.style.height = 'calc(100vh - 44px)';
+        win.style.left = '0px';
+        win.style.top = '28px';
+      }
+    }
+
+    function bringToFront(element) {
+      zIndexCounter++;
+      element.style.zIndex = zIndexCounter;
+    }
+
+    function dragWindow(e, elementId) {
+      // Ignore drags on control buttons
+      if (e.target.tagName.toLowerCase() === 'button') return;
+      dragElement = document.getElementById(elementId);
+      bringToFront(dragElement);
+      
+      const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+      
+      const rect = dragElement.getBoundingClientRect();
+      dragStartX = clientX - rect.left;
+      dragStartY = clientY - rect.top;
+
+      document.addEventListener('mousemove', onDragMove);
+      document.addEventListener('mouseup', onDragEnd);
+      document.addEventListener('touchmove', onDragMove, {passive: false});
+      document.addEventListener('touchend', onDragEnd);
+    }
+
+    function onDragMove(e) {
+      if (!dragElement) return;
+      e.preventDefault();
+      const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+      let newX = clientX - dragStartX;
+      let newY = clientY - dragStartY;
+
+      // Restrict dragging higher than menu bar
+      if (newY < 28) newY = 28;
+
+      dragElement.style.left = `${newX}px`;
+      dragElement.style.top = `${newY}px`;
+      dragElement.style.transform = 'none';
+    }
+
+    function onDragEnd() {
+      dragElement = null;
+      document.removeEventListener('mousemove', onDragMove);
+      document.removeEventListener('mouseup', onDragEnd);
+      document.removeEventListener('touchmove', onDragMove);
+      document.removeEventListener('touchend', onDragEnd);
+    }
+
+    // Toggle Config Tabs in Dolphin Sidebar
+    function toggleConfigTab(panelId) {
+      const sidebar = document.getElementById('dolphin-config-sidebar');
+      const config = document.getElementById('config-panel');
+      const graphics = document.getElementById('graphics-panel');
+      const controller = document.getElementById('controller-panel');
+
+      if (!panelId) {
+        sidebar.style.display = 'none';
+        return;
+      }
+
+      sidebar.style.display = 'flex';
+      config.classList.add('hidden');
+      graphics.classList.add('hidden');
+      controller.classList.add('hidden');
+
+      document.getElementById(panelId).classList.remove('hidden');
+    }
+
+    // Top Right Clock Utility
+    function updateClock() {
+      const now = new Date();
+      const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+      document.getElementById('clock').textContent = now.toLocaleDateString('en-US', options);
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Toggle control center
+    function toggleControlCenter() {
+      const cc = document.getElementById('control-center');
+      cc.classList.toggle('hidden');
+    }
+
+    // Toggle Light / Dark Mode Sim
+    let isDarkMode = true;
+    function toggleDarkMode() {
+      isDarkMode = !isDarkMode;
+      const btn = document.getElementById('dark-mode-toggle');
+      if (isDarkMode) {
+        btn.textContent = "ON";
+        btn.className = "bg-blue-600 px-3 py-1 rounded-full text-[10px] font-bold";
+        document.getElementById('dolphin-window').className = document.getElementById('dolphin-window').className.replace('bg-white/95 text-slate-900', 'bg-slate-900/95 text-white');
+      } else {
+        btn.textContent = "OFF";
+        btn.className = "bg-slate-600 px-3 py-1 rounded-full text-[10px] font-bold";
+        document.getElementById('dolphin-window').className = document.getElementById('dolphin-window').className.replace('bg-slate-900/95 text-white', 'bg-white/95 text-slate-900');
+      }
+    }
+
+    // System Volume State
+    const volumeSlider = document.getElementById('volume-slider');
+    const volumeVal = document.getElementById('volume-val');
+    volumeSlider.addEventListener('input', (e) => {
+      volumeVal.textContent = `${e.target.value}%`;
+      if (oscNode && soundEnabled) {
+        gainNode.gain.setValueAtTime(e.target.value / 300, audioCtx.currentTime);
+      }
+    });
+
+    // Handle game resolution hack styling updates
+    function updateAspectHack() {
+      const aspect = document.getElementById('setting-aspect-ratio').value;
+      const wrapper = document.getElementById('game-canvas-wrapper');
+      if (aspect === "4:3") {
+        wrapper.style.aspectRatio = "4/3";
+      } else {
+        wrapper.style.aspectRatio = "16/9";
+      }
+    }
+
+    // ----------------- F-ZERO GX GAME ENGINE (CANVAS) -----------------
+    const canvas = document.getElementById('fzero-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let gameActive = false;
+    let cameraZ = 0;
+    let trackLength = 2000;
+    let playerX = 0; // -1 to 1 representing track width
+    let position = 0; // Distance down the road
+    let speed = 0; // Current velocity
+    let targetSpeed = 1200; // Peak speed based on state
+    let maxSpeedNormal = 950;
+    let maxSpeedBoost = 1580;
+    let energy = 100; // Craft power / shield
+    let currentLap = 1;
+    let maxLaps = 3;
+    let lastTime = Date.now();
+    let currentFocus = "third-person"; // perspective tracking
+
+    // Touch status values
+    let keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false, KeyW: false, KeyS: false, KeyA: false, KeyD: false, Space: false, KeyC: false };
+
+    // Set up Keyboard controls
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') e.preventDefault(); // Stop window spacebar scrolling
+      keys[e.code] = true;
+      if (e.code === 'KeyC') {
+        // Toggle game camera
+        currentFocus = currentFocus === "third-person" ? "first-person" : "third-person";
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    // Virtual Touch controls mapping (Mobile friendly)
+    const touchSetup = (btnId, keyName) => {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; }, {passive: false});
+      btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; }, {passive: false});
+    };
+    touchSetup('touch-left', 'ArrowLeft');
+    touchSetup('touch-right', 'ArrowRight');
+    touchSetup('touch-accel', 'ArrowUp');
+    touchSetup('touch-boost', 'Space');
+
+    // Pseudo 3D Road Segment Creator
+    let segments = [];
+    function buildTrack() {
+      segments = [];
+      for (let i = 0; i < trackLength; i++) {
+        let curve = 0;
+        // Generate sweeping cosmic curves
+        if (i > 100 && i < 300) curve = 2;
+        if (i > 450 && i < 700) curve = -3.5;
+        if (i > 900 && i < 1100) curve = 1.5;
+        if (i > 1300 && i < 1600) curve = -2;
+
+        let pitch = 0;
+        // Rollercoaster vertical loops and drop sections
+        if (i > 200 && i < 400) pitch = Math.sin((i - 200) / 30) * 12;
+        if (i > 600 && i < 800) pitch = -Math.sin((i - 600) / 40) * 22; // huge descent
+        if (i > 1100 && i < 1400) pitch = Math.sin((i - 1100) / 50) * 15;
+
+        // Custom features on track
+        let type = 'normal';
+        // Boost pads at checkpoints
+        if (i % 250 === 0 && i > 0) type = 'boost';
+        // Energy Recharge Strip zones
+        else if ((i % 400 > 300 && i % 400 < 370)) type = 'recharge';
+
+        segments.push({
+          index: i,
+          p1: { x: 0, y: 0, z: i * 20 },
+          p2: { x: 0, y: 0, z: (i + 1) * 20 },
+          curve: curve,
+          pitch: pitch,
+          type: type,
+          color: {
+            road: i % 2 === 0 ? '#111018' : '#171622',
+            grid: i % 2 === 0 ? '#2a004f' : '#640096',
+            stripes: i % 2 === 0 ? '#ff007f' : '#00ffff'
+          }
+        });
+      }
+    }
+
+    // Render Canvas Track
+    function project3D(p, cameraX, cameraY, cameraZ, fov, width, height) {
+      let scale = fov / (p.z - cameraZ);
+      if (scale < 0) scale = 0;
+      let x = (width / 2) + (p.x - cameraX) * scale * (width / 2);
+      let y = (height / 2) - (p.y - cameraY) * scale * (height / 2);
+      let w = scale * (width / 2);
+      return { x: x, y: y, scale: scale, w: w };
+    }
+
+    // AI Rivals Simulation Object
+    let rivals = [
+      { name: "Fire Stingray", craft: "S. Goroh", color: "#ef4444", pos: 300, x: -0.6, speed: 850 },
+      { name: "White Cat", craft: "J. Summer", color: "#f472b6", pos: 700, x: 0.4, speed: 900 },
+      { name: "Wild Goose", craft: "P. Chain", color: "#10b981", pos: 100, x: -0.2, speed: 880 },
+      { name: "Black Bull", craft: "Black Shadow", color: "#1e1b4b", pos: 1100, x: 0.7, speed: 920 }
+    ];
+
+    // Audio Synthesizer Loop (Web Audio API)
+    let audioCtx = null;
+    let oscNode = null;
+    let noiseNode = null;
+    let gainNode = null;
+    let soundEnabled = false;
+
+    function initSynth() {
+      try {
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        
+        // Master Gain
+        gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        
+        // Synth Oscillator
+        oscNode = audioCtx.createOscillator();
+        oscNode.type = 'sawtooth';
+        oscNode.frequency.setValueAtTime(100, audioCtx.currentTime);
+        
+        // Filter out extreme frequencies to make it punchy
+        let filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+
+        oscNode.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscNode.start();
+        soundEnabled = true;
+        document.getElementById('sound-state-icon').className = "w-4 h-4 text-emerald-400";
+      } catch (err) {
+        console.error("Audio Context initialization failed: ", err);
+      }
+    }
+
+    function toggleGameSound() {
+      if (!audioCtx) {
+        initSynth();
+        return;
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+        soundEnabled = true;
+        document.getElementById('sound-state-icon').className = "w-4 h-4 text-emerald-400";
+      } else if (audioCtx.state === 'running') {
+        audioCtx.suspend();
+        soundEnabled = false;
+        document.getElementById('sound-state-icon').className = "w-4 h-4 text-white/50";
+      }
+    }
+
+    function triggerCrashSound() {
+      if (!soundEnabled || !audioCtx) return;
+      // Temporary high sweep oscillation represent crash
+      let quickOsc = audioCtx.createOscillator();
+      let quickGain = audioCtx.createGain();
+      quickOsc.type = 'triangle';
+      quickOsc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      quickOsc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+      
+      quickGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      quickGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+      quickOsc.connect(quickGain);
+      quickGain.connect(audioCtx.destination);
+      quickOsc.start();
+      quickOsc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    function triggerBoostSound() {
+      if (!soundEnabled || !audioCtx) return;
+      // Laser / Boost rise wave
+      let quickOsc = audioCtx.createOscillator();
+      let quickGain = audioCtx.createGain();
+      quickOsc.type = 'sine';
+      quickOsc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      quickOsc.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.5);
+      
+      quickGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      quickGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+      quickOsc.connect(quickGain);
+      quickGain.connect(audioCtx.destination);
+      quickOsc.start();
+      quickOsc.stop(audioCtx.currentTime + 0.5);
+    }
+
+    // Main Game Runner Lifecycle
+    function startGame() {
+      // Toggle windows to bring emulation front
+      document.getElementById('game-window').classList.remove('hidden');
+      document.getElementById('game-window').style.display = 'flex';
+      bringToFront(document.getElementById('game-window'));
+
+      // Enable active stop button in toolbar
+      document.getElementById('btn-stop-game').classList.remove('opacity-55', 'cursor-not-allowed');
+      document.getElementById('btn-stop-game').removeAttribute('disabled');
+      document.getElementById('btn-play-game').classList.add('opacity-55', 'cursor-not-allowed');
+
+      // Setup and boot loaders
+      document.getElementById('game-boot-loader').style.opacity = '1';
+      document.getElementById('game-boot-loader').classList.remove('hidden');
+
+      setTimeout(() => {
+        document.getElementById('game-boot-loader').style.opacity = '0';
+        setTimeout(() => {
+          document.getElementById('game-boot-loader').classList.add('hidden');
+        }, 1000);
+      }, 1500);
+
+      // Start canvas renderer loop
+      gameActive = true;
+      buildTrack();
+      
+      // Canvas auto scale
+      resizeGameCanvas();
+      window.addEventListener('resize', resizeGameCanvas);
+
+      // Web Audio Auto-start warning check
+      if (!audioCtx) {
+        initSynth();
+      }
+
+      // Start engine loop
+      requestAnimationFrame(gameLoop);
+    }
+
+    function stopGame() {
+      gameActive = false;
+      document.getElementById('game-window').classList.add('hidden');
+      document.getElementById('game-window').style.display = 'none';
+
+      // Reset tools button
+      document.getElementById('btn-stop-game').classList.add('opacity-55', 'cursor-not-allowed');
+      document.getElementById('btn-stop-game').setAttribute('disabled', 'true');
+      document.getElementById('btn-play-game').classList.remove('opacity-55', 'cursor-not-allowed');
+
+      // Stop Audio oscillator safely
+      if (audioCtx) {
+        audioCtx.suspend();
+        soundEnabled = false;
+        document.getElementById('sound-state-icon').className = "w-4 h-4 text-white/50";
+      }
+    }
+
+    function resetGame() {
+      position = 0;
+      speed = 0;
+      energy = 100;
+      currentLap = 1;
+      playerX = 0;
+      buildTrack();
+      triggerBoostSound();
+    }
+
+    function resizeGameCanvas() {
+      const container = document.getElementById('game-canvas-wrapper');
+      if (!container) return;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    }
+
+    // Toggle Game Screen Zoom Mode
+    function toggleGameFullscreen() {
+      const gw = document.getElementById('game-window');
+      gw.classList.toggle('max-w-4xl');
+      gw.classList.toggle('w-full');
+      gw.classList.toggle('h-full');
+      setTimeout(resizeGameCanvas, 100);
+    }
+
+    // MAIN ANIMATION LOOP (Dolphin Frame Simulation)
+    function gameLoop() {
+      if (!gameActive) return;
+
+      const now = Date.now();
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+
+      // Handle calculations and inputs
+      updateGamePhysics(dt);
+
+      // Render graphics to canvas
+      drawGameScene();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Update F-Zero Ship Physics
+    function updateGamePhysics(dt) {
+      const maxNormal = document.getElementById('cheat-codes-chk').checked ? 1400 : maxSpeedNormal;
+
+      // Accelerate / Decelerate mapping
+      if (keys.ArrowUp || keys.KeyW) {
+        speed += (targetSpeed - speed) * 0.05;
+      } else if (keys.ArrowDown || keys.KeyS) {
+        speed += (0 - speed) * 0.08; // heavy braking
+      } else {
+        speed += (0 - speed) * 0.02; // natural deceleration
+      }
+
+      // Steer Controls
+      let steerAmount = 0.045 * (speed / maxNormal);
+      if (keys.ArrowLeft || keys.KeyA) {
+        playerX -= steerAmount;
+      }
+      if (keys.ArrowRight || keys.KeyD) {
+        playerX += steerAmount;
+      }
+
+      // Track constraint & side wall crash penalties
+      if (Math.abs(playerX) > 1.0) {
+        playerX = Math.sign(playerX) * 1.0;
+        speed = speed * 0.95; // instant speed loss
+        energy -= 0.5; // lose health
+        triggerCrashSound();
+        // Visual indicator alert
+        document.getElementById('game-checkpoint-msg').textContent = "COLLISION ALERT!";
+        document.getElementById('game-checkpoint-msg').classList.remove('hidden');
+        setTimeout(() => document.getElementById('game-checkpoint-msg').classList.add('hidden'), 500);
+      }
+
+      // Space Booster Activation (Unlocks on Lap 2 or with cheat on)
+      const cheatsOn = document.getElementById('cheat-codes-chk').checked;
+      const boostUnlocked = currentLap >= 2 || cheatsOn;
+      const spacePressed = keys.Space;
+
+      if (boostUnlocked) {
+        document.getElementById('boost-alert').textContent = "BOOST READY (PRESS SPACEBAR)";
+        document.getElementById('boost-alert').className = "text-[9px] text-green-400 animate-pulse uppercase tracking-wider font-bold mt-1";
+      } else {
+        document.getElementById('boost-alert').textContent = "BOOST LOCKED (UNLOCKED IN LAP 2)";
+        document.getElementById('boost-alert').className = "text-[9px] text-pink-500 animate-pulse uppercase tracking-wider font-bold mt-1";
+      }
+
+      if (spacePressed && boostUnlocked && energy > 10) {
+        speed = Math.min(speed + 150, maxSpeedBoost);
+        targetSpeed = maxSpeedBoost;
+        if (!cheatsOn) {
+          energy -= 0.15; // drain shield for real mechanics
+        }
+        document.getElementById('game-boost-flash').classList.remove('hidden');
+        document.getElementById('hud-boost-msg').textContent = "BOOST ACTIVE";
+        document.getElementById('hud-boost-msg').className = "text-[9px] text-pink-400 font-bold";
+        triggerBoostSound();
+        setTimeout(() => document.getElementById('game-boost-flash').classList.add('hidden'), 80);
+      } else {
+        targetSpeed = maxNormal;
+        document.getElementById('hud-boost-msg').textContent = "DRIVE SAFELY";
+        document.getElementById('hud-boost-msg').className = "text-[9px] text-white/50";
+      }
+
+      // Increment Position down the virtual loop track
+      position += speed * dt * 2.2; // map velocity multiplier
+
+      // Detect Track Loop lap wrap
+      let trackTotalZ = trackLength * 20;
+      if (position >= trackTotalZ) {
+        position = position % trackTotalZ;
+        currentLap++;
+        if (currentLap > maxLaps) {
+          currentLap = 1; // race completed lap reset
+          document.getElementById('game-checkpoint-msg').textContent = "FINAL GRAND PRIX WINNER!";
+          document.getElementById('game-checkpoint-msg').classList.remove('hidden');
+          setTimeout(() => document.getElementById('game-checkpoint-msg').classList.add('hidden'), 3000);
+        }
+        document.getElementById('hud-lap').innerHTML = `${currentLap}<span class="text-sm">/3</span>`;
+      }
+
+      // Update Rivals AI positions
+      rivals.forEach(rival => {
+        rival.pos += rival.speed * dt * 2.2;
+        if (rival.pos >= trackTotalZ) rival.pos = rival.pos % trackTotalZ;
+        // Keep rivals near player pathing
+        rival.x += (Math.sin(now / 5000 + rival.pos) * 0.01);
+      });
+
+      // Track type detection (Boost and recharge pads)
+      let currentSegIndex = Math.floor(position / 20) % trackLength;
+      let currentSeg = segments[currentSegIndex];
+      if (currentSeg) {
+        if (currentSeg.type === 'boost') {
+          speed = Math.min(speed + 100, maxSpeedBoost);
+          triggerBoostSound();
+          document.getElementById('game-boost-flash').classList.remove('hidden');
+          setTimeout(() => document.getElementById('game-boost-flash').classList.add('hidden'), 100);
+        } else if (currentSeg.type === 'recharge') {
+          energy = Math.min(energy + 0.8, 100); // restore shields in strip
+        }
+      }
+
+      // Audio engine pitch adjustment relative to current simulated velocity
+      if (soundEnabled && oscNode) {
+        let basePitch = 60 + (speed / 10);
+        oscNode.frequency.setValueAtTime(basePitch, audioCtx.currentTime);
+      }
+
+      // Force Shield Limit Game Over check
+      if (energy <= 0) {
+        energy = 100;
+        speed = 0;
+        triggerCrashSound();
+        document.getElementById('game-checkpoint-msg').textContent = "MACHINE RETIRED / RECONSTRUCTING!";
+        document.getElementById('game-checkpoint-msg').classList.remove('hidden');
+        setTimeout(() => document.getElementById('game-checkpoint-msg').classList.add('hidden'), 2000);
+      }
+
+      // Update HUD Values
+      document.getElementById('hud-speed').innerHTML = `${Math.floor(speed)} <span class="text-xs">km/h</span>`;
+      document.getElementById('hud-energy-percent').textContent = `${Math.floor(energy)}%`;
+      document.getElementById('hud-energy-bar').style.width = `${energy}%`;
+
+      // Simulates real GameCube position estimation
+      let plRank = 5;
+      rivals.forEach(r => {
+        if (r.pos > position) plRank++;
+        else plRank--;
+      });
+      plRank = Math.max(1, Math.min(plRank, 30));
+      document.getElementById('hud-pos').innerHTML = `${String(plRank).padStart(2, '0')}<span class="text-sm">/30</span>`;
+    }
+
+    // Draw the entire pseudo-3D visual track
+    function drawGameScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const fov = 150;
+      const cameraHeight = currentFocus === "third-person" ? 180 : 80;
+      const startSegment = Math.floor(position / 20);
+      const drawDistance = 140;
+
+      // 1. Draw Space Cosmic Skybox
+      drawCosmicSkybox();
+
+      let maxy = canvas.height;
+      let x = 0;
+      let dx = 0;
+
+      // 2. Painters Algorithm: Render the futuristic road track from back to front
+      for (let i = 0; i < drawDistance; i++) {
+        let segmentIndex = (startSegment + i) % trackLength;
+        let segment = segments[segmentIndex];
+        
+        // Loop correction wrap
+        let loopedOffset = (startSegment + i) >= trackLength ? trackLength * 20 : 0;
+
+        let cameraX = playerX * 400; // Translate steer x offset
+
+        // Handle sweeps curved math dynamically
+        dx += segment.curve;
+        let p1X_Offset = segment.p1.x - cameraX - x;
+        let p1Y_Offset = segment.p1.y + segment.pitch - cameraHeight;
+        let p2X_Offset = segment.p2.x - cameraX - x - dx;
+        let p2Y_Offset = segment.p2.y + segment.pitch - cameraHeight;
+
+        let projectedP1 = project3D({x: p1X_Offset, y: p1Y_Offset, z: segment.p1.z + loopedOffset}, 0, 0, position, fov, canvas.width, canvas.height);
+        let projectedP2 = project3D({x: p2X_Offset, y: p2Y_Offset, z: segment.p2.z + loopedOffset}, 0, 0, position, fov, canvas.width, canvas.height);
+
+        x += dx;
+
+        // Skip clip drawing behind view
+        if (projectedP1.scale <= 0 || projectedP2.scale <= 0) continue;
+        if (projectedP2.y >= maxy) continue;
+
+        maxy = projectedP2.y;
+
+        // Draw individual Segment Lines & Colors
+        let w1 = projectedP1.w;
+        let w2 = projectedP2.w;
+        let x1 = projectedP1.x;
+        let x2 = projectedP2.x;
+        let y1 = projectedP1.y;
+        let y2 = projectedP2.y;
+
+        // Base Purple Cosmic Road
+        ctx.fillStyle = segment.color.road;
+        ctx.beginPath();
+        ctx.moveTo(x1 - w1, y1);
+        ctx.lineTo(x2 - w2, y2);
+        ctx.lineTo(x2 + w2, y2);
+        ctx.lineTo(x1 + w1, y1);
+        ctx.closePath();
+        ctx.fill();
+
+        // Edge Glowing Purple Guards
+        ctx.fillStyle = segment.color.stripes;
+        ctx.beginPath();
+        ctx.moveTo(x1 - w1 * 1.05, y1);
+        ctx.lineTo(x2 - w2 * 1.05, y2);
+        ctx.lineTo(x2 - w2, y2);
+        ctx.lineTo(x1 - w1, y1);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x1 + w1, y1);
+        ctx.lineTo(x2 + w2, y2);
+        ctx.lineTo(x2 + w2 * 1.05, y2);
+        ctx.lineTo(x1 + w1 * 1.05, y1);
+        ctx.closePath();
+        ctx.fill();
+
+        // Special Neon Grid line style
+        ctx.strokeStyle = segment.color.grid;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x1 - w1, y1);
+        ctx.lineTo(x2 - w2, y2);
+        ctx.moveTo(x1 + w1, y1);
+        ctx.lineTo(x2 + w2, y2);
+        ctx.stroke();
+
+        // Special Road Elements
+        if (segment.type === 'boost') {
+          // Yellow glow chevron boost arrows
+          ctx.fillStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.moveTo(x1 - w1 * 0.3, y1);
+          ctx.lineTo(x2 - w2 * 0.3, y2);
+          ctx.lineTo(x2 + w2 * 0.3, y2);
+          ctx.lineTo(x1 + w1 * 0.3, y1);
+          ctx.closePath();
+          ctx.fill();
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `${Math.floor(w1 * 0.15)}px sans-serif`;
+          ctx.fillText("▲ BOOST ▲", x1 - w1 * 0.15, y1 - 4);
+        } else if (segment.type === 'recharge') {
+          // Purple Recharge Striping zone
+          ctx.fillStyle = 'rgba(236, 72, 153, 0.6)';
+          ctx.beginPath();
+          ctx.moveTo(x1 - w1 * 0.8, y1);
+          ctx.lineTo(x2 - w2 * 0.8, y2);
+          ctx.lineTo(x2 - w2 * 0.5, y2);
+          ctx.lineTo(x1 - w1 * 0.5, y1);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // Draw Rival Machines dynamically on Track Segments
+        rivals.forEach(rival => {
+          let rSeg = Math.floor(rival.pos / 20) % trackLength;
+          if (rSeg === segmentIndex) {
+            let rX = (rival.x - playerX) * w1;
+            let drawX = x1 + rX;
+            let drawY = y1 - (w1 * 0.1);
+            let size = w1 * 0.22;
+            
+            // Draw rival vehicle silhouette/box representation
+            ctx.fillStyle = rival.color;
+            ctx.beginPath();
+            ctx.moveTo(drawX - size/2, drawY);
+            ctx.lineTo(drawX, drawY - size/2);
+            ctx.lineTo(drawX + size/2, drawY);
+            ctx.lineTo(drawX + size/3, drawY + size/4);
+            ctx.lineTo(drawX - size/3, drawY + size/4);
+            ctx.closePath();
+            ctx.fill();
+
+            // Hover jet glow
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(drawX - size/4, drawY + size/4, size/2, size/6);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '7px monospace';
+            ctx.fillText(rival.craft, drawX - size/2, drawY - size/2);
+          }
+        });
+      }
+
+      // 3. Draw Player Vessel: Blue Falcon
+      if (currentFocus === "third-person") {
+        drawBlueFalcon();
+      } else {
+        drawCockpitHUD();
+      }
+    }
+
+    // Draw Captain Falcon's Craft: Blue Falcon
+    function drawBlueFalcon() {
+      const plX = canvas.width / 2;
+      const plY = canvas.height - 40;
+      const size = 64;
+
+      // Tilting effect on active steering
+      let tilt = 0;
+      if (keys.ArrowLeft || keys.KeyA) tilt = -0.3;
+      if (keys.ArrowRight || keys.KeyD) tilt = 0.3;
+
+      ctx.save();
+      ctx.translate(plX, plY);
+      ctx.rotate(tilt);
+
+      // Main fuselage
+      ctx.fillStyle = '#2563eb'; // Royal Blue Falcon
+      ctx.beginPath();
+      ctx.moveTo(0, -size / 2);
+      ctx.lineTo(-size / 3, size / 4);
+      ctx.lineTo(-size / 4, size / 3);
+      ctx.lineTo(size / 4, size / 3);
+      ctx.lineTo(size / 3, size / 4);
+      ctx.closePath();
+      ctx.fill();
+
+      // Yellow highlights
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.moveTo(-size/6, -size/6);
+      ctx.lineTo(size/6, -size/6);
+      ctx.lineTo(0, -size/2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Cockpit canopy
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.ellipse(0, -size/6, size/8, size/5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Left stabilizer wing
+      ctx.fillStyle = '#1e3a8a';
+      ctx.beginPath();
+      ctx.moveTo(-size / 3, size / 4);
+      ctx.lineTo(-size / 1.5, size / 3);
+      ctx.lineTo(-size / 3, size / 3);
+      ctx.closePath();
+      ctx.fill();
+
+      // Right stabilizer wing
+      ctx.beginPath();
+      ctx.moveTo(size / 3, size / 4);
+      ctx.lineTo(size / 1.5, size / 3);
+      ctx.lineTo(size / 3, size / 3);
+      ctx.closePath();
+      ctx.fill();
+
+      // Jet exhaust flames based on current velocity and boost state
+      let flameHeight = (speed / 100) * 4;
+      if (keys.Space) flameHeight *= 1.8;
+      ctx.fillStyle = keys.Space ? '#f43f5e' : '#fb923c';
+      ctx.beginPath();
+      ctx.moveTo(-size / 6, size / 3);
+      ctx.lineTo(0, (size / 3) + flameHeight);
+      ctx.lineTo(size / 6, size / 3);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // First person HUD rendering fallback
+    function drawCockpitHUD() {
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
+
+      // Target Crosshairs
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, 20, 0, Math.PI * 2);
+      ctx.moveTo(canvas.width / 2 - 40, canvas.height / 2);
+      ctx.lineTo(canvas.width / 2 + 40, canvas.height / 2);
+      ctx.moveTo(canvas.width / 2, canvas.height / 2 - 40);
+      ctx.lineTo(canvas.width / 2, canvas.height / 2 + 40);
+      ctx.stroke();
+    }
+
+    // Render realistic futuristic space background skybox
+    function drawCosmicSkybox() {
+      // Deep Space background starfield with a high-speed motion feel
+      const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height / 2);
+      skyGradient.addColorStop(0, '#020005');
+      skyGradient.addColorStop(1, '#0e081c');
+      ctx.fillStyle = skyGradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Star particles sliding horizontally corresponding with curving
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      for (let i = 0; i < 30; i++) {
+        let x = (Math.sin(i * 1234.5) * canvas.width * 2 - (playerX * 100)) % canvas.width;
+        if (x < 0) x += canvas.width;
+        let y = Math.abs(Math.cos(i * 543.2) * (canvas.height / 2));
+        ctx.fillRect(x, y, 1.5, 1.5);
+      }
+
+      // Massive glowing synthwave moon
+      const moonX = canvas.width - 120;
+      const moonY = 80;
+      const r = 40;
+      let grad = ctx.createRadialGradient(moonX, moonY, r/10, moonX, moonY, r);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.3, '#ec4899');
+      grad.addColorStop(1, '#6366f1');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // ----------------- INTELLIGENT SPEEDRUN ASSISTANT -----------------
+    const messagesContainer = document.getElementById('copilot-messages');
+    const copilotForm = document.getElementById('copilot-form');
+    const copilotInput = document.getElementById('copilot-input');
+
+    const systemInstructionPrompt = `
+      You are Siri/macOS Assistant specialized in GameCube speedrunning and hardware configuration.
+      You are running inside a macOS simulator window alongside Dolphin Emulator.
+      The user is playing "F-Zero GX" (2003) for Nintendo GameCube.
+      Help them with speedrunning mechanics, setups, secrets, history, or configurations:
+      - Detail techniques like Momentum Turbo Slide (MTS), momentum throttle tricks, snaking, space flying.
+      - Advise on best customized craft parts (Titan-G4, Gallant-M2, etc.) or optimal settings (Widescreen, Dual Core, HD graphics inside Dolphin).
+      Format output nicely with bold styling or bullet points in markdown style. Keep responses brief, punchy, and highly passionate about gaming!
+    `;
+
+    async function handleCopilotSubmit(e) {
+      e.preventDefault();
+      const text = copilotInput.value.trim();
+      if (!text) return;
+
+      appendMessage('user', text);
+      copilotInput.value = '';
+
+      // Set up loading message state
+      const loadingDiv = appendMessage('assistant', 'Analyzing F-Zero metrics & generating response...');
+
+      // Build safe query string
+      try {
+        const responseText = await callGeminiAPI(text);
+        loadingDiv.innerHTML = responseText;
+      } catch (err) {
+        loadingDiv.innerHTML = `<span class="text-red-400">Error connecting to speedrun network. Please try again.</span>`;
+      }
+    }
+
+    function presetQuery(queryText) {
+      copilotInput.value = queryText;
+      handleCopilotSubmit(new Event('submit'));
+    }
+
+    function appendMessage(sender, text) {
+      const div = document.createElement('div');
+      div.className = sender === 'user' 
+        ? 'bg-blue-600 text-white p-2.5 rounded-lg ml-8 self-end shadow-sm' 
+        : 'bg-white/10 text-white/90 p-2.5 rounded-lg mr-8 shadow-sm';
+      div.innerHTML = text;
+      messagesContainer.appendChild(div);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      return div;
+    }
+
+    // Implement Exponential Backoff with Gemini API Text Generation
+    async function callGeminiAPI(userQuery) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{ parts: [{ text: userQuery }] }],
+        systemInstruction: { parts: [{ text: systemInstructionPrompt }] }
+      };
+
+      let delay = 1000;
+      const maxRetries = 5;
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            return formatMarkdownText(textResponse || "Siri: Response formulation error.");
+          }
+        } catch (e) {
+          // ignore error to retry
+        }
+        await new Promise(res => setTimeout(res, delay));
+        delay *= 2; // exponential backoff
+      }
+      throw new Error("API call failed after max retries.");
+    }
+
+    // Helper to format simple markdown response elements inside assistant
+    function formatMarkdownText(text) {
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code class="bg-black/40 px-1 py-0.5 rounded font-mono text-[10px]">$1</code>')
+        .replace(/\n/g, '<br>');
+    }
+
+    // Select the F-Zero game on row click
+    function selectGame(gameId) {
+      const rows = document.querySelectorAll('#dolphin-window tbody tr');
+      rows.forEach(r => r.classList.remove('bg-blue-600/20', 'border-l-4', 'border-blue-500'));
+      
+      const fzeroRow = document.getElementById('fzero-game-row');
+      fzeroRow.classList.add('bg-blue-600/20', 'border-l-4', 'border-blue-500');
+    }
+
+    // Trigger on double clicks or click events
+    function openGameInDolphin() {
+      selectGame('fzero');
+      startGame();
+    }
+
+    function resetSimulator() {
+      resetGame();
+      location.reload();
+    }
+
+    // Auto load Lucide Icon graphics mapping
+    lucide.createIcons();
+  </script>
+</body>
+</html>
