@@ -4,7 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>macOS Simulator</title>
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "macOS Simulator",
+      "operatingSystem": "All",
+      "applicationCategory": "SimulationApplication",
+      "browserRequirements": "Requires HTML5, CSS3, and JavaScript.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+
     <style>
+        :root {
+            --menu-bg: rgba(255, 255, 255, 0.7);
+            --dock-bg: rgba(255, 255, 255, 0.25);
+            --window-bg: #ffffff;
+            --text-dark: #333333;
+            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -15,29 +40,28 @@
         body, html {
             width: 100%;
             height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: var(--font-stack);
             overflow: hidden;
-            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') no-repeat center center fixed;
+            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2560' ) no-repeat center center fixed;
             background-size: cover;
         }
 
-        /* --- Top Menu Bar --- */
+        /* --- Menu Bar --- */
         #menu-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
             height: 24px;
-            background: rgba(255, 255, 255, 0.75);
+            width: 100%;
+            background-color: var(--menu-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 16px;
+            padding: 0 15px;
             font-size: 13px;
+            color: var(--text-dark);
             font-weight: 500;
-            color: #333;
+            position: absolute;
+            top: 0;
             z-index: 9999;
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
         }
@@ -45,77 +69,88 @@
         .menu-left, .menu-right {
             display: flex;
             align-items: center;
-            gap: 16px;
-        }
-
-        .apple-logo {
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
+            gap: 15px;
         }
 
         .menu-item {
-            cursor: pointer;
+            cursor: default;
+        }
+        
+        .apple-icon {
+            font-size: 15px;
+            font-weight: bold;
         }
 
-        .menu-item:hover {
-            opacity: 0.7;
-        }
-
-        /* --- Desktop Area --- */
+        /* --- Desktop --- */
         #desktop {
             width: 100%;
-            height: 100%;
-            padding-top: 24px;
-            position: relative;
+            height: calc(100% - 24px);
+            position: absolute;
+            top: 24px;
+            left: 0;
         }
 
-        /* --- Draggable Window --- */
+        /* --- Windows --- */
         .window {
             position: absolute;
-            top: 100px;
-            left: 100px;
-            width: 450px;
-            height: 300px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 10px;
+            width: 600px;
+            height: 400px;
+            background: var(--window-bg);
+            border-radius: 12px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.4);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            min-width: 300px;
+            min-height: 200px;
+            transform: scale(0.95);
+            opacity: 0;
+            transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+            pointer-events: none;
             z-index: 10;
         }
 
-        .window-header {
-            height: 30px;
-            background: #f0f0f0;
-            display: flex;
-            align-items: center;
-            padding: 0 12px;
-            position: relative;
-            cursor: move;
-            border-bottom: 1px solid #dcdcdc;
+        .window.open {
+            transform: scale(1);
+            opacity: 1;
+            pointer-events: auto;
         }
 
-        .window-buttons {
+        .window.active {
+            z-index: 100;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+        }
+
+        /* Window Titlebar */
+        .titlebar {
+            height: 52px;
+            background: #f6f6f6;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            position: relative;
+            cursor: move;
+        }
+
+        .window-controls {
             display: flex;
             gap: 8px;
             position: absolute;
-            left: 12px;
+            left: 16px;
         }
 
-        .win-btn {
+        .control-btn {
             width: 12px;
             height: 12px;
             border-radius: 50%;
+            border: none;
             cursor: pointer;
         }
 
-        .btn-close { background: #ff5f56; border: 0.5px solid #e0443e; }
-        .btn-minimize { background: #ffbd2e; border: 0.5px solid #dea123; }
-        .btn-maximize { background: #27c93f; border: 0.5px solid #1aab29; }
+        .btn-close { background-color: #ff5f56; }
+        .btn-minimize { background-color: #ffbd2e; }
+        .btn-maximize { background-color: #27c93f; }
 
         .window-title {
             width: 100%;
@@ -125,26 +160,92 @@
             color: #4a4a4a;
         }
 
+        /* Window Content */
         .window-content {
-            padding: 16px;
-            flex: 1;
-            font-size: 14px;
-            color: #333;
-            overflow-y: auto;
+            flex-grow: 1;
+            overflow: auto;
+            position: relative;
             background: #ffffff;
         }
 
-        /* --- The Dock --- */
-        #dock-container {
-            position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
+        /* --- App-Specific Styles --- */
+        /* Safari */
+        .safari-browser {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .safari-navbar {
+            background: #f0f0f0;
+            padding: 8px 16px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border-bottom: 1px solid #dcdcdc;
+        }
+        .safari-address-bar {
+            flex-grow: 1;
+            background: #ffffff;
+            border: 1px solid #cccccc;
+            border-radius: 6px;
+            padding: 4px 12px;
+            font-size: 12px;
+            outline: none;
+            text-align: center;
+        }
+        .safari-address-bar:focus {
+            text-align: left;
+        }
+        .safari-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
         }
 
-        .dock {
-            background: rgba(255, 255, 255, 0.35);
+        /* Notes App */
+        .notes-app {
+            display: flex;
+            height: 100%;
+        }
+        .notes-sidebar {
+            width: 200px;
+            background: #f3f3f3;
+            border-right: 1px solid #e0e0e0;
+            padding: 10px;
+        }
+        .note-item-preview {
+            background: #ffe699;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .notes-body {
+            flex-grow: 1;
+            padding: 20px;
+            outline: none;
+            font-size: 15px;
+            line-height: 1.5;
+            background: #fffdf6;
+            font-family: var(--font-stack);
+        }
+
+        /* --- macOS Dock --- */
+        #dock-container {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 99999;
+        }
+
+        #dock {
+            background-color: var(--dock-bg);
             backdrop-filter: blur(30px);
             -webkit-backdrop-filter: blur(30px);
             padding: 8px;
@@ -152,27 +253,58 @@
             display: flex;
             align-items: flex-end;
             gap: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            pointer-events: auto;
         }
 
-        .dock-item {
+        .dock-item-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .dock-icon {
             width: 50px;
             height: 50px;
-            background: rgba(255, 255, 255, 0.9);
             border-radius: 12px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
             cursor: pointer;
-            transition: transform 0.2s ease, margin 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: width 0.1s ease, height 0.1s ease;
+            object-fit: cover;
         }
 
-        .dock-item:hover {
-            transform: scale(1.2) translateY(-10px);
-            margin: 0 10px;
+        /* Mock App Badges / Indicator Dots */
+        .dock-indicator {
+            width: 4px;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            margin-top: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .dock-item-wrapper.running .dock-indicator {
+            opacity: 1;
+        }
+
+        /* Tooltip */
+        .dock-icon::after {
+            content: attr(data-title);
+            position: absolute;
+            top: -40px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .dock-item-wrapper:hover .dock-icon::after {
+            opacity: 1;
         }
     </style>
 </head>
@@ -180,7 +312,7 @@
 
     <div id="menu-bar">
         <div class="menu-left">
-            <span class="apple-logo">&#63743;</span>
+            <span class="menu-item apple-icon"></span>
             <span class="menu-item" style="font-weight: 700;">Finder</span>
             <span class="menu-item">File</span>
             <span class="menu-item">Edit</span>
@@ -190,125 +322,195 @@
             <span class="menu-item">Help</span>
         </div>
         <div class="menu-right">
-            <span class="menu-item">🇺🇸</span>
-            <span class="menu-item">Wi-Fi</span>
-            <span class="menu-item" id="live-clock">Mon 9:41 AM</span>
+            <span class="menu-item">🇺🇸 US</span>
+            <span class="menu-item">🔋 100%</span>
+            <span class="menu-item" id="menu-clock">Thu 1:05 PM</span>
         </div>
     </div>
 
     <div id="desktop">
-        
-        <div class="window" id="safari-window">
-            <div class="window-header" id="window-header">
-                <div class="window-buttons">
-                    <div class="win-btn btn-close" onclick="closeWindow()"></div>
-                    <div class="win-btn btn-minimize"></div>
-                    <div class="win-btn btn-maximize"></div>
+
+        <div id="win-safari" class="window" style="left: 100px; top: 80px;">
+            <div class="titlebar" onmousedown="dragStart(event, 'win-safari')">
+                <div class="window-controls">
+                    <button class="control-btn btn-close" onclick="closeApp('win-safari')"></button>
+                    <button class="control-btn btn-minimize"></button>
+                    <button class="control-btn btn-maximize"></button>
                 </div>
-                <div class="window-title">Welcome to macOS Simulator</div>
+                <div class="window-title">Safari</div>
             </div>
             <div class="window-content">
-                <h3 style="margin-bottom: 10px;">Hello, User!</h3>
-                <p>Welcome to this responsive macOS simulation environment.</p>
-                <br>
-                <p><strong>Features implemented:</strong></p>
-                <ul>
-                    <li>Dynamic, US-formatted live system clock.</li>
-                    <li>Draggable application window interface.</li>
-                    <li>Interactive desktop layout with an apple-style app Dock.</li>
-                </ul>
+                <div class="safari-browser">
+                    <div class="safari-navbar">
+                        <input type="text" class="safari-address-bar" id="safari-url" value="https://wikipedia.org" onkeydown="checkSafariSearch(event)">
+                    </div>
+                    <iframe id="safari-frame" class="safari-iframe" src="https://www.wikipedia.org"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <div id="win-notes" class="window" style="left: 200px; top: 150px;">
+            <div class="titlebar" onmousedown="dragStart(event, 'win-notes')">
+                <div class="window-controls">
+                    <button class="control-btn btn-close" onclick="closeApp('win-notes')"></button>
+                    <button class="control-btn btn-minimize"></button>
+                    <button class="control-btn btn-maximize"></button>
+                </div>
+                <div class="window-title">Notes</div>
+            </div>
+            <div class="window-content">
+                <div class="notes-app">
+                    <div class="notes-sidebar">
+                        <div class="note-item-preview">
+                            <b>Welcome Note</b><br>
+                            <span style="font-size:11px; color:#666;">Try editing this document...</span>
+                        </div>
+                    </div>
+                    <div class="notes-body" contenteditable="true">
+                        <h2>Welcome to macOS Simulator!</h2>
+                        <p>This is a simulated macOS desktop environment running entirely inside a single HTML file.</p>
+                        <br>
+                        <p><b>Features available:</b></p>
+                        <ul>
+                            <li>Draggable, layer-managed App Windows</li>
+                            <li>Functional Apple Dock with responsive hover state cues</li>
+                            <li>Live synchronized status-bar clock</li>
+                            <li>Interactive functional Safari Frame and rich Note Pad</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
 
     </div>
 
     <div id="dock-container">
-        <div class="dock">
-            <div class="dock-item" onclick="openWindow()" title="Finder">📂</div>
-            <div class="dock-item" title="Safari">🌐</div>
-            <div class="dock-item" title="Messages">💬</div>
-            <div class="dock-item" title="Maps">📍</div>
-            <div class="dock-item" title="Photos">🖼️</div>
-            <div class="dock-item" title="System Settings">⚙️</div>
+        <div id="dock">
+            <div class="dock-item-wrapper" id="dock-safari">
+                <img class="dock-icon" data-title="Safari" src="https://upload.wikimedia.org/wikipedia/commons/5/52/Safari_browser_logo.svg" onclick="toggleApp('win-safari', 'dock-safari')">
+                <div class="dock-indicator"></div>
+            </div>
+            <div class="dock-item-wrapper" id="dock-notes">
+                <img class="dock-icon" data-title="Notes" src="https://upload.wikimedia.org/wikipedia/commons/0/01/Apple_Notes_icon.svg" onclick="toggleApp('win-notes', 'dock-notes')">
+                <div class="dock-indicator"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- Live US Locale Clock ---
+        // --- Clock Update Mechanism ---
         function updateClock() {
-            const clockElement = document.getElementById('live-clock');
             const now = new Date();
-            
-            const options = { 
-                weekday: 'short', 
-                month: 'short', 
-                day: 'numeric', 
-                hour: 'numeric', 
-                minute: '2-digit', 
-                hour12: true 
-            };
-            
-            // Format standard to US layout: e.g., "Wed, Jul 8, 6:00 PM"
-            clockElement.textContent = now.toLocaleString('en-US', options);
+            const options = { weekday: 'short', month: 'none', day: 'none', hour: 'numeric', minute: '2-digit', hour12: true };
+            // Format strictly according to US standard
+            let timeString = now.toLocaleDateString('en-US', options) + " " + now.toLocaleTimeString('en-US', {hour: 'numeric', minute:'2-digit', hour12: true});
+            // Clean up localized double dates if any
+            const hoursMinutes = now.toLocaleTimeString('en-US', {hour: 'numeric', minute:'2-digit', hour12: true});
+            const dayName = now.toLocaleDateString('en-US', {weekday: 'short'});
+            document.getElementById('menu-clock').innerText = `${dayName} ${hoursMinutes}`;
         }
         setInterval(updateClock, 1000);
         updateClock();
 
         // --- Window Management ---
-        const myWindow = document.getElementById('safari-window');
-        
-        function closeWindow() {
-            myWindow.style.display = 'none';
-        }
+        let activeWindow = null;
 
-        function openWindow() {
-            myWindow.style.display = 'flex';
-        }
+        function toggleApp(windowId, dockId) {
+            const win = document.getElementById(windowId);
+            const dockWrapper = document.getElementById(dockId);
 
-        // --- Draggable Logic ---
-        dragElement(myWindow);
-
-        function dragElement(elmnt) {
-            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            const header = document.getElementById(elmnt.id + "-header");
-            
-            if (header) {
-                header.onmousedown = dragMouseDown;
+            if (win.classList.contains('open')) {
+                // If it's already open and focused, close it (or minimize effect)
+                if (win.classList.contains('active')) {
+                    closeApp(windowId);
+                } else {
+                    focusWindow(win);
+                }
             } else {
-                elmnt.onmousedown = dragMouseDown;
+                win.classList.add('open');
+                dockWrapper.classList.add('running');
+                focusWindow(win);
             }
+        }
 
-            function dragMouseDown(e) {
-                e = e || window.event;
+        function closeApp(windowId) {
+            const win = document.getElementById(windowId);
+            win.classList.remove('open');
+            
+            // Map window items back to dock dependencies to remove operational dot indicators
+            const dockId = windowId.replace('win-', 'dock-');
+            document.getElementById(dockId).classList.remove('running');
+        }
+
+        function focusWindow(win) {
+            document.querySelectorAll('.window').forEach(w => w.classList.remove('active'));
+            win.classList.add('active');
+            activeWindow = win;
+        }
+
+        // Global listener to capture background click window swapping
+        document.querySelectorAll('.window').forEach(win => {
+            win.addEventListener('mousedown', () => focusWindow(win));
+        });
+
+        // --- Draggable Window Logic ---
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+        let dragTarget = null;
+
+        function dragStart(e, windowId) {
+            dragTarget = document.getElementById(windowId);
+            focusWindow(dragTarget);
+            
+            // Extract existing offset mappings dynamically
+            const style = window.getComputedStyle(dragTarget);
+            xOffset = parseInt(style.left) || 0;
+            yOffset = parseInt(style.top) || 0;
+
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+
+            if (e.target.classList.contains('titlebar') || e.target.classList.contains('window-title')) {
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', dragEnd);
+            }
+        }
+
+        function drag(e) {
+            if (dragTarget) {
                 e.preventDefault();
-                // Get mouse cursor position at startup
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
-            }
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
 
-            function elementDrag(e) {
-                e = e || window.event;
-                e.preventDefault();
-                // Calculate the new cursor position
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                
-                // Set the element's new position, bounding it to the top menu bar limit
-                let newTop = elmnt.offsetTop - pos2;
-                if (newTop < 24) newTop = 24; 
-                
-                elmnt.style.top = newTop + "px";
-                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-            }
+                // Simple boundaries checks against top layout bar breakages
+                if (currentY < 24) currentY = 24; 
 
-            function closeDragElement() {
-                // Stop moving when mouse button is released
-                document.onmouseup = null;
-                document.onmousemove = null;
+                dragTarget.style.left = currentX + "px";
+                dragTarget.style.top = currentY + "px";
+            }
+        }
+
+        function dragEnd() {
+            initialX = currentX;
+            initialY = currentY;
+            dragTarget = null;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+
+        // --- Safari Browser Navigation Logic ---
+        function checkSafariSearch(e) {
+            if (e.key === 'Enter') {
+                let url = document.getElementById('safari-url').value;
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                }
+                document.getElementById('safari-frame').src = url;
+                document.getElementById('safari-url').value = url;
             }
         }
     </script>
