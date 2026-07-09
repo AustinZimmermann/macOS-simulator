@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja-JP">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS - Dolphin Emulator (F-ZERO GX)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') no-repeat center center;
+            background-size: cover;
+        }
+
+        /* --- macOS Menu Bar --- */
+        .menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .menu-left, .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .apple-icon {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .menu-item.active {
+            font-weight: 700;
+        }
+
+        /* --- Dolphin Emulator Window --- */
+        .window {
+            position: absolute;
+            top: 50px;
+            left: 100px;
+            width: 900px;
+            height: 565px;
+            background: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        /* Titlebar */
+        .titlebar {
+            height: 28px;
+            background: #2d2d2d;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            position: relative;
+            border-bottom: 1px solid #1a1a1a;
+            cursor: move;
+        }
+
+        .window-buttons {
+            display: flex;
+            gap: 8px;
+            position: absolute;
+            left: 10px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dot-close { background: #ff5f56; }
+        .dot-minimize { background: #ffbd2e; }
+        .dot-maximize { background: #27c93f; }
+
+        .window-title {
+            width: 100%;
+            text-align: center;
+            color: #bcbcbc;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Game Display Area (16:9 Pillarbox layout) */
+        .game-container {
+            flex: 1;
+            background: #000; /* Pillars (Black Bars) */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* 16:9 Aspect Ratio Box */
+        .screen-16-9 {
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            position: relative;
+            background: #050510;
+            overflow: hidden;
+        }
+
+        .game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #1a0033 0%, #000000 100%);
+        }
+
+        /* --- F-ZERO GX UI Elements --- */
+        .fzero-ui {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            color: #fff;
+            font-family: 'Arial Black', Impact, sans-serif;
+            text-shadow: 2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .ui-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            font-style: italic;
+        }
+
+        .ui-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .speedometer {
+            text-align: right;
+            font-size: 36px;
+            color: #00ffcc;
+        }
+        .speed-val {
+            font-size: 54px;
+            color: #fff;
+        }
+
+        .energy-bar-container {
+            width: 250px;
+            height: 20px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #fff;
+            transform: skewX(-15deg);
+            overflow: hidden;
+        }
+
+        .energy-bar {
+            width: 85%;
+            height: 100%;
+            background: linear-gradient(90deg, #ffcc00, #ff0055);
+        }
+
+        /* --- Game State Messages --- */
+        .game-overlay {
+            position: absolute;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .btn-start {
+            padding: 12px 24px;
+            background: #007aff;
+            border: none;
+            color: white;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,122,255,0.4);
+        }
+
+        /* --- macOS Dock --- */
+        .dock-container {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 6px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 9999;
+        }
+
+        .dock-item {
+            width: 50px;
+            height: 50px;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .dock-item:hover {
+            transform: scale(1.2) translateY(-10px);
+        }
+
+        .dock-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .dock-indicator {
+            width: 4px;
+            height: 4px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="menu-bar">
+        <div class="menu-left">
+            <span class="apple-icon"></span>
+            <span class="menu-item active">Dolphin</span>
+            <span class="menu-item">ファイル</span>
+            <span class="menu-item">編集</span>
+            <span class="menu-item">エミュレーション</span>
+            <span class="menu-item">グラフィック</span>
+            <span class="menu-item">ウィンドウ</span>
+            <span class="menu-item">ヘルプ</span>
+        </div>
+        <div class="menu-right">
+            <span>JA</span>
+            <span id="current-time">12:00 PM</span>
+        </div>
+    </div>
+
+    <div class="window" id="dolphinWindow">
+        <div class="titlebar" id="titlebar">
+            <div class="window-buttons">
+                <span class="dot dot-close"></span>
+                <span class="dot dot-minimize"></span>
+                <span class="dot dot-maximize"></span>
+            </div>
+            <div class="window-title">Dolphin | F-ZERO GX (GFZJ01) - 60.00 FPS</div>
+        </div>
+
+        <div class="game-container">
+            <div class="screen-16-9">
+                <div class="game-canvas" id="gameCanvas">
+                    <button class="btn-start" id="startBtn">エミュレーションを開始 (START)</button>
+                    
+                    <div class="fzero-ui" id="fzeroUi">
+                        <div class="ui-top">
+                            <div>1st / 30</div>
+                            <div>LAP 1/3</div>
+                        </div>
+                        <div class="ui-bottom">
+                            <div>
+                                <div style="font-size: 14px; margin-bottom: 4px;">ENERGY</div>
+                                <div class="energy-bar-container">
+                                    <div class="energy-bar"></div>
+                                </div>
+                            </div>
+                            <div class="speedometer">
+                                <span class="speed-val" id="speedText">0</span> km/h
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dock-container">
+        <div class="dock-item">
+            <img src="https://images.sftcdn.net/images/t_app-icon-m/p/8ddb70b6-a82c-4b5d-a668-400d3c4097f3/3005452743/dolphin-emulator-download%20(1).png" alt="Dolphin">
+            <div class="dock-indicator"></div>
+        </div>
+    </div>
+
+    <script>
+        // System Clock Simulation
+        function updateTime() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; 
+            document.getElementById('current-time').innerText = `${hours}:${minutes} ${ampm}`;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Window Dragging Functionality
+        const windowEl = document.getElementById('dolphinWindow');
+        const titlebarEl = document.getElementById('titlebar');
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+
+        titlebarEl.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialX = windowEl.offsetLeft;
+            initialY = windowEl.offsetTop;
+            document.addEventListener('mousemove', dragWindow);
+            document.addEventListener('mouseup', stopDragWindow);
+        });
+
+        function dragWindow(e) {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            windowEl.style.left = `${initialX + dx}px`;
+            windowEl.style.top = `${initialY + dy}px`;
+        }
+
+        function stopDragWindow() {
+            isDragging = false;
+            document.removeEventListener('mousemove', dragWindow);
+            document.removeEventListener('mouseup', stopDragWindow);
+        }
+
+        // F-ZERO GX State Simulation
+        const startBtn = document.getElementById('startBtn');
+        const fzeroUi = document.getElementById('fzeroUi');
+        const speedText = document.getElementById('speedText');
+        let gameLoopInterval;
+
+        startBtn.addEventListener('click', () => {
+            startBtn.style.display = 'none';
+            fzeroUi.style.opacity = '1';
+            
+            // Simulating high speed racing values
+            let targetSpeed = 1042;
+            let currentSpeed = 0;
+
+            gameLoopInterval = setInterval(() => {
+                if (currentSpeed < targetSpeed) {
+                    currentSpeed += Math.floor(Math.random() * 45) + 15;
+                    if (currentSpeed > targetSpeed) currentSpeed = targetSpeed;
+                } else {
+                    currentSpeed = targetSpeed + (Math.floor(Math.random() * 11) - 5);
+                }
+                speedText.innerText = currentSpeed;
+            }, 1000 / 60); // 60 FPS update ticks
+        });
+    </script>
+</body>
+</html>
