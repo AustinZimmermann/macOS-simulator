@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ja-JP">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Simulator - Dolphin Emulator (Wii Sports Resort)</title>
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Dolphin Emulator Simulator on macOS",
+      "operatingSystem": "macOS",
+      "applicationCategory": "Emulator",
+      "browserRequirements": "Requires HTML5, CSS3, and JavaScript.",
+      "inLanguage": "ja-JP",
+      "featureList": [
+        "macOS風のデスクトップインターフェース",
+        "Dolphinエミュレータのウィンドウ展開とドラッグ操作",
+        "『Wii Sports Resort』のインタラクティブな模擬起動"
+      ]
+    }
+    </script>
+
+    <style>
+        :root {
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --wallpaper-url: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1920&q=80');
+            --dolphin-icon: url('https://cdn2.steamgriddb.com/icon/8146f98d564daf7f6cc87d9edcb92705/32/256x256.png');
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: var(--font-family);
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        /* デスクトップ全体 */
+        .desktop-container {
+            width: 100%;
+            height: 100%;
+            background: var(--wallpaper-url) no-repeat center center;
+            background-size: cover;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* macOS メニューバー */
+        .menu-bar {
+            height: 24px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: 0 1px 0px rgba(0,0,0,0.15);
+        }
+
+        .menu-left, .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .menu-item {
+            cursor: default;
+        }
+        .menu-item.bold {
+            font-weight: 700;
+        }
+        .apple-icon {
+            font-size: 15px;
+        }
+
+        /* デスクトップアイコンエリア */
+        .desktop-space {
+            flex: 1;
+            position: relative;
+            padding: 20px;
+        }
+
+        .desktop-icon {
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: default;
+            color: #fff;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            font-size: 12px;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px 4px;
+        }
+
+        .desktop-icon:active, .desktop-icon.selected {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .icon-img {
+            width: 48px;
+            height: 48px;
+            background: var(--dolphin-icon) no-repeat center center;
+            background-size: contain;
+        }
+
+        /* macOS ウィンドウ (Dolphin) */
+        .mac-window {
+            position: absolute;
+            top: 10%;
+            left: 20%;
+            width: 760px;
+            height: 520px;
+            background: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 100;
+            transform: scale(0.95);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .mac-window.open {
+            transform: scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ウィンドウタイトルバー */
+        .window-header {
+            height: 38px;
+            background: #2d2d2d;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            position: relative;
+            border-bottom: 1px solid #1a1a1a;
+            cursor: move;
+        }
+
+        .window-buttons {
+            display: flex;
+            gap: 8px;
+            position: absolute;
+            left: 12px;
+        }
+
+        .win-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: default;
+        }
+        .btn-close { background: #ff5f56; }
+        .btn-minimize { background: #ffbd2e; }
+        .btn-maximize { background: #27c93f; }
+
+        .window-title {
+            width: 100%;
+            text-align: center;
+            color: #b3b3b3;
+            font-size: 13px;
+            font-weight: 400;
+        }
+
+        /* Dolphin エミュレータのツールバー */
+        .dolphin-toolbar {
+            height: 44px;
+            background: #3a3a3a;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 16px;
+            border-bottom: 1px solid #222;
+        }
+
+        .dolphin-btn {
+            background: #4a4a4a;
+            color: #eee;
+            border: 1px solid #5a5a5a;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .dolphin-btn:hover {
+            background: #5a5a5a;
+        }
+        .dolphin-status {
+            color: #888;
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        /* ゲーム表示画面エリア */
+        .game-viewport {
+            flex: 1;
+            background: #000;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        /* Wiiゲーム画面模擬スタリング */
+        .wii-screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #48a1d9 0%, #0d4b75 100%);
+            position: relative;
+            display: none;
+        }
+
+        .wii-screen.active {
+            display: flex;
+        }
+
+        /* Wii Sports Resort 模擬ロゴ */
+        .resort-logo {
+            text-align: center;
+            margin-bottom: 20px;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .resort-logo h1 {
+            font-size: 42px;
+            font-style: italic;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            letter-spacing: 2px;
+        }
+        .resort-logo .sub {
+            font-size: 18px;
+            color: #ffeb3b;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            margin-top: -5px;
+        }
+
+        .wii-prompt {
+            font-size: 18px;
+            color: #fff;
+            background: rgba(0,0,0,0.4);
+            padding: 10px 30px;
+            border-radius: 30px;
+            border: 2px solid #fff;
+            cursor: pointer;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* ゲーム選択メニュー（クリック後） */
+        .wii-menu {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 80%;
+        }
+
+        .menu-card {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .menu-card:hover {
+            transform: scale(1.05);
+            background: #fff;
+            color: #007aff;
+        }
+
+        /* Dolphin 初期状態（未起動） */
+        .emulator-idle {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            color: #aaa;
+        }
+
+        /* macOS Dock */
+        .dock-container {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            padding: 8px;
+            border-radius: 20px;
+            display: flex;
+            align-items: end;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 999;
+        }
+
+        .dock-icon {
+            width: 54px;
+            height: 54px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: transform 0.2s ease;
+            position: relative;
+        }
+
+        .dock-icon:hover {
+            transform: scale(1.2) translateY(-10px);
+        }
+
+        .dock-dolphin {
+            background-image: var(--dolphin-icon);
+        }
+
+        .dock-indicator {
+            width: 4px;
+            height: 4px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+        }
+        .dock-dolphin.running .dock-indicator {
+            display: block;
+        }
+
+        /* アニメーション定義 */
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="desktop-container">
+        <div class="menu-bar">
+            <div class="menu-left">
+                <span class="menu-item apple-icon"></span>
+                <span class="menu-item bold" id="active-app-name">Finder</span>
+                <span class="menu-item">ファイル</span>
+                <span class="menu-item">編集</span>
+                <span class="menu-item">表示</span>
+                <span class="menu-item">移動</span>
+                <span class="menu-item">ウィンドウ</span>
+                <span class="menu-item">ヘルプ</span>
+            </div>
+            <div class="menu-right">
+                <span class="menu-item">Adf</span>
+                <span class="menu-item">バッテリー 100%</span>
+                <span class="menu-item" id="macos-clock">7月9日(木) 14:07</span>
+            </div>
+        </div>
+
+        <div class="desktop-space" id="desktop-space">
+            <div class="desktop-icon" id="desktop-dolphin-lnk">
+                <div class="icon-img"></div>
+                <div>Dolphin</div>
+            </div>
+
+            <div class="mac-window" id="dolphin-window">
+                <div class="window-header" id="window-header">
+                    <div class="window-buttons">
+                        <button class="win-btn btn-close" id="win-close-btn"></button>
+                        <button class="win-btn btn-minimize"></button>
+                        <button class="win-btn btn-maximize"></button>
+                    </div>
+                    <div class="window-title" id="window-title">Dolphin Emulator</div>
+                </div>
+                
+                <div class="dolphin-toolbar">
+                    <button class="dolphin-btn" id="btn-play">起動</button>
+                    <button class="dolphin-btn" id="btn-stop" disabled style="opacity:0.5;">停止</button>
+                    <button class="dolphin-btn">設定</button>
+                    <button class="dolphin-btn">コントローラ</button>
+                    <div class="dolphin-status" id="dolphin-status">状態: アイドル</div>
+                </div>
+
+                <div class="game-viewport">
+                    <div class="emulator-idle" id="emulator-idle">
+                        <svg width="64" height="64" fill="currentColor" viewBox="0 0 16 16" style="color: #444;">
+                            <path d="M11.5 1a.5.5 0 0 1 .5.5V4h1.5a.5.5 0 0 1 0 1H12v1.5a.5.5 0 0 1-1 0V5H9.5a.5.5 0 0 1 0-1H11V1.5a.5.5 0 0 1 .5-.5zM5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a.5.5 0 0 1 1 0v4a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h4a.5.5 0 0 1 0 1H5z"/>
+                        </svg>
+                        <span>「起動」ボタンを押して『Wii Sports Resort』をロードします</span>
+                    </div>
+
+                    <div class="wii-screen" id="wii-screen">
+                        <div id="wii-title-view" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+                            <div class="resort-logo">
+                                <h1>Wii Sports Resort</h1>
+                                <div class="sub">Wiiスポーツ リゾート</div>
+                            </div>
+                            <button class="wii-prompt" id="btn-press-a">①ボタン + ②ボタン を押す</button>
+                        </div>
+
+                        <div class="wii-menu" id="wii-menu-view">
+                            <div class="menu-card" onclick="alert('チャンバラを開始します！')">⚔️ チャンバラ</div>
+                            <div class="menu-card" onclick="alert('マリンバイクを開始します！')">🌊 マリンバイク</div>
+                            <div class="menu-card" onclick="alert('ボウリングを開始します！')">🎳 ボウリング</div>
+                            <div class="menu-card" onclick="alert('アーチェリーを開始します！')">🏹 アーチェリー</div>
+                            <div class="menu-card" onclick="alert('ピンポンを開始します！')">🏓 ピンポン</div>
+                            <div class="menu-card" onclick="alert('バスケットボールを開始します！')">🏀 バスケット</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dock-container">
+            <div class="dock-icon dock-dolphin" id="dock-dolphin-btn">
+                <div class="dock-indicator"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM要素の取得
+        const desktopDolphinLnk = document.getElementById('desktop-dolphin-lnk');
+        const dockDolphinBtn = document.getElementById('dock-dolphin-btn');
+        const dolphinWindow = document.getElementById('dolphin-window');
+        const winCloseBtn = document.getElementById('win-close-btn');
+        const activeAppName = document.getElementById('active-app-name');
+        const windowTitle = document.getElementById('window-title');
+        
+        const btnPlay = document.getElementById('btn-play');
+        const btnStop = document.getElementById('btn-stop');
+        const dolphinStatus = document.getElementById('dolphin-status');
+        
+        const emulatorIdle = document.getElementById('emulator-idle');
+        const wiiScreen = document.getElementById('wii-screen');
+        const btnPressA = document.getElementById('btn-press-a');
+        const wiiTitleView = document.getElementById('wii-title-view');
+        const wiiMenuView = document.getElementById('wii-menu-view');
+        const macosClock = document.getElementById('macos-clock');
+
+        // 時計のリフレッシュ
+        function updateClock() {
+            const now = new Date();
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const day = days[now.getDay()];
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            macosClock.textContent = `${month}月${date}日(${day}) ${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ウィンドウを開く関数
+        function openDolphin() {
+            dolphinWindow.classList.add('open');
+            dockDolphinBtn.classList.add('running');
+            activeAppName.textContent = 'Dolphin';
+        }
+
+        // ウィンドウを閉じる関数
+        function closeDolphin() {
+            dolphinWindow.classList.remove('open');
+            stopGame();
+            dockDolphinBtn.classList.remove('running');
+            activeAppName.textContent = 'Finder';
+        }
+
+        // ゲーム起動
+        function playGame() {
+            emulatorIdle.style.display = 'none';
+            wiiScreen.classList.add('active');
+            wiiTitleView.style.display = 'flex';
+            wiiMenuView.style.display = 'none';
+            
+            btnPlay.disabled = true;
+            btnPlay.style.opacity = 0.5;
+            btnStop.disabled = false;
+            btnStop.style.opacity = 1;
+            
+            windowTitle.textContent = 'Dolphin Emulator | Wii Sports Resort (Wiiスポーツ リゾート) - 60.00 FPS (JAP)';
+            dolphinStatus.textContent = '状態: 実行中 (FPS: 60)';
+        }
+
+        // ゲーム停止
+        function stopGame() {
+            emulatorIdle.style.display = 'flex';
+            wiiScreen.classList.remove('active');
+            
+            btnPlay.disabled = false;
+            btnPlay.style.opacity = 1;
+            btnStop.disabled = true;
+            btnStop.style.opacity = 0.5;
+            
+            windowTitle.textContent = 'Dolphin Emulator';
+            dolphinStatus.textContent = '状態: アイドル';
+        }
+
+        // イベントリスナー
+        desktopDolphinLnk.addEventListener('dblclick', openDolphin);
+        desktopDolphinLnk.addEventListener('click', (e) => {
+            e.stopPropagation();
+            desktopDolphinLnk.classList.add('selected');
+        });
+        document.getElementById('desktop-space').addEventListener('click', () => {
+            desktopDolphinLnk.classList.remove('selected');
+        });
+
+        dockDolphinBtn.addEventListener('click', () => {
+            if (dolphinWindow.classList.contains('open')) {
+                dolphinWindow.classList.toggle('open');
+            } else {
+                openDolphin();
+            }
+        });
+
+        winCloseBtn.addEventListener('click', closeDolphin);
+        btnPlay.addEventListener('click', playGame);
+        btnStop.addEventListener('click', stopGame);
+
+        btnPressA.addEventListener('click', () => {
+            wiiTitleView.style.display = 'none';
+            wiiMenuView.style.display = 'grid';
+        });
+
+        // ウィンドウの簡易ドラッグロジック
+        const header = document.getElementById('window-header');
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        header.addEventListener('mousedown', (e) => {
+            if(e.target.classList.contains('win-btn')) return;
+            isDragging = true;
+            offsetX = e.clientX - dolphinWindow.offsetLeft;
+            offsetY = e.clientY - dolphinWindow.offsetTop;
+            dolphinWindow.style.transition = 'none'; // ドラッグ中はアニメーションを切る
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            dolphinWindow.style.left = `${e.clientX - offsetX}px`;
+            dolphinWindow.style.top = `${e.clientY - offsetY}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            dolphinWindow.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+        });
+    </script>
+</body>
+</html>
