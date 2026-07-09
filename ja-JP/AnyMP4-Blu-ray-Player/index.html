@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS シミュレータ - AnyMP4 Blu-ray Player</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Premium blur effects */
+        .glass {
+            background: rgba(30, 30, 40, 0.45);
+            backdrop-filter: blur(25px) saturate(160%);
+            -webkit-backdrop-filter: blur(25px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .glass-light {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dock-item:hover {
+            transform: scale(1.3) translateY(-12px);
+        }
+        .dock-item {
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        /* Animations */
+        @keyframes bootFade {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .app-window {
+            animation: bootFade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden select-none font-sans text-white relative bg-cover bg-center transition-all duration-700" id="desktop-bg" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1920&q=80');">
+
+    <!-- Screen overlay for dark mode configuration -->
+    <div id="dark-overlay" class="absolute inset-0 bg-black bg-opacity-20 pointer-events-none transition-all duration-700"></div>
+
+    <!-- Apple Boot Logo Overlay (Simulated Bootup on First Visit) -->
+    <div id="boot-screen" class="absolute inset-0 bg-black flex flex-col justify-center items-center z-50 transition-opacity duration-1000">
+        <i class="fa-brands fa-apple text-white text-8xl mb-12 animate-pulse"></i>
+        <div class="w-48 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+            <div id="boot-progress" class="h-full bg-white w-0 transition-all duration-1000 ease-out"></div>
+        </div>
+        <p class="text-sm text-gray-400 mt-4 tracking-widest font-mono">macOS Sequoia Loading...</p>
+    </div>
+
+    <!-- MAIN DESKTOP ENVIRONMENT -->
+    <div class="flex flex-col h-full w-full justify-between pb-4">
+        
+        <!-- TOP MENU BAR -->
+        <header class="w-full h-7 glass flex justify-between items-center px-4 text-xs font-medium z-40 select-none shadow-md">
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleSystemMenu(event)" class="hover:bg-white hover:bg-opacity-20 px-2.5 py-0.5 rounded transition">
+                    <i class="fa-brands fa-apple text-sm"></i>
+                </button>
+                <button id="active-app-menu" class="font-bold hover:bg-white hover:bg-opacity-20 px-2 py-0.5 rounded transition">Finder</button>
+                
+                <!-- Dynamic Menu options dependent on selected app context -->
+                <div id="contextual-menus" class="hidden md:flex items-center space-x-3 text-gray-200">
+                    <!-- Loaded dynamically via JS -->
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3.5">
+                <button class="hover:bg-white hover:bg-opacity-20 p-1 rounded transition">
+                    <i class="fa-solid fa-wifi"></i>
+                </button>
+                <button class="hover:bg-white hover:bg-opacity-20 p-1 rounded transition" onclick="toggleControlCenter(event)">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+                <div class="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-2 py-0.5 rounded transition">
+                    <i class="fa-solid fa-volume-high text-xs"></i>
+                    <span id="menubar-vol" class="text-[10px]">80%</span>
+                </div>
+                <!-- Japanese Dynamic Clock -->
+                <span id="menu-clock" class="hover:bg-white hover:bg-opacity-20 px-2 py-0.5 rounded transition font-medium cursor-pointer"></span>
+            </div>
+        </header>
+
+        <!-- DESKTOP AREA (Draggable bounds for windows) -->
+        <main id="desktop" class="flex-grow w-full relative p-4 flex flex-col items-end space-y-6 pointer-events-auto" onclick="deselectAllWindows()">
+            <!-- System Shortcuts -->
+            <div class="desktop-shortcut flex flex-col items-center justify-center p-2 rounded-xl hover:bg-white hover:bg-opacity-15 cursor-pointer text-center w-20 transition duration-150" onclick="event.stopPropagation(); openApp('anymp4')">
+                <img src="https://www.anymp4.com/images/download/blu-ray-player.png" alt="AnyMP4" class="w-12 h-12 drop-shadow-lg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3502/3502685.png'">
+                <span class="text-[11px] text-white font-medium mt-1 drop-shadow-md leading-tight text-center truncate w-full">AnyMP4 起動</span>
+            </div>
+            <div class="desktop-shortcut flex flex-col items-center justify-center p-2 rounded-xl hover:bg-white hover:bg-opacity-15 cursor-pointer text-center w-20 transition duration-150" onclick="event.stopPropagation(); openApp('finder')">
+                <i class="fa-regular fa-folder-open text-yellow-400 text-4xl drop-shadow-lg"></i>
+                <span class="text-[11px] text-white font-medium mt-1.5 drop-shadow-md truncate w-full">ブルーレイ映画</span>
+            </div>
+            <div class="desktop-shortcut flex flex-col items-center justify-center p-2 rounded-xl hover:bg-white hover:bg-opacity-15 cursor-pointer text-center w-20 transition duration-150" onclick="event.stopPropagation(); openApp('safari')">
+                <i class="fa-brands fa-safari text-blue-400 text-4xl drop-shadow-lg animate-pulse"></i>
+                <span class="text-[11px] text-white font-medium mt-1.5 drop-shadow-md truncate w-full">AnyMP4 公式</span>
+            </div>
+
+            <!-- WINDOW CONTAINER (Created dynamically) -->
+            <div id="window-layer" class="absolute inset-0 pointer-events-none"></div>
+        </main>
+
+        <!-- APPLE DROPDOWN MENU -->
+        <div id="apple-dropdown" class="absolute top-8 left-4 w-52 glass rounded-xl p-1.5 shadow-2xl text-xs hidden flex-col space-y-0.5 z-50 text-gray-200">
+            <button onclick="openAboutModal()" class="w-full text-left px-3 py-2 hover:bg-blue-600 hover:text-white rounded-lg transition">このMacについて</button>
+            <div class="border-b border-white border-opacity-10 my-1"></div>
+            <button onclick="openApp('settings')" class="w-full text-left px-3 py-2 hover:bg-blue-600 hover:text-white rounded-lg transition">システム設定...</button>
+            <button class="w-full text-left px-3 py-2 hover:bg-blue-600 hover:text-white rounded-lg transition opacity-60 cursor-not-allowed">App Store...</button>
+            <div class="border-b border-white border-opacity-10 my-1"></div>
+            <button onclick="location.reload()" class="w-full text-left px-3 py-2 hover:bg-blue-600 hover:text-white rounded-lg transition">再起動...</button>
+            <button onclick="shutdownSimulator()" class="w-full text-left px-3 py-2 hover:bg-blue-600 hover:text-white rounded-lg transition">システム終了...</button>
+        </div>
+
+        <!-- CONTROL CENTER PANEL -->
+        <div id="control-center" class="absolute top-8 right-4 w-72 glass rounded-2xl p-4 shadow-2xl hidden flex-col space-y-4 z-50 text-gray-200">
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-white bg-opacity-10 rounded-xl p-3 flex flex-col justify-between h-20">
+                    <div class="flex items-center space-x-2 text-blue-400">
+                        <i class="fa-solid fa-wifi text-lg"></i>
+                        <span class="text-xs font-bold text-white">Wi-Fi</span>
+                    </div>
+                    <span class="text-[10px] text-gray-300">AnyMP4-Office</span>
+                </div>
+                <div class="bg-white bg-opacity-10 rounded-xl p-3 flex flex-col justify-between h-20">
+                    <div class="flex items-center space-x-2 text-blue-400">
+                        <i class="fa-solid fa-bluetooth text-lg"></i>
+                        <span class="text-xs font-bold text-white">Bluetooth</span>
+                    </div>
+                    <span class="text-[10px] text-gray-300">接続済み</span>
+                </div>
+            </div>
+            
+            <div class="bg-white bg-opacity-10 rounded-xl p-3 space-y-2">
+                <div class="flex justify-between text-xs">
+                    <span>ディスプレイ輝度</span>
+                    <i class="fa-solid fa-sun"></i>
+                </div>
+                <input id="slider-brightness" type="range" min="30" max="100" value="100" oninput="changeBrightness(this.value)" class="w-full accent-blue-500 h-1 rounded-lg bg-gray-700 cursor-pointer">
+            </div>
+
+            <div class="bg-white bg-opacity-10 rounded-xl p-3 space-y-2">
+                <div class="flex justify-between text-xs">
+                    <span>音量</span>
+                    <i class="fa-solid fa-volume-high"></i>
+                </div>
+                <input id="slider-volume" type="range" min="0" max="100" value="80" oninput="changeSystemVolume(this.value)" class="w-full accent-blue-500 h-1 rounded-lg bg-gray-700 cursor-pointer">
+            </div>
+
+            <div class="flex justify-between items-center text-xs px-1">
+                <span>ダークモード</span>
+                <button id="dark-mode-toggle" onclick="toggleDarkMode()" class="w-10 h-5 bg-blue-600 rounded-full p-0.5 transition-colors relative flex items-center">
+                    <div class="w-4 h-4 bg-white rounded-full shadow-md transform translate-x-5 transition-transform" id="dark-toggle-knob"></div>
+                </button>
+            </div>
+        </div>
+
+        <!-- APP DOCK -->
+        <div class="w-full flex justify-center z-40 px-4">
+            <nav class="glass rounded-2xl px-4 py-3 flex items-end space-x-4 shadow-2xl relative transition-all duration-300">
+                <!-- Finder -->
+                <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="openApp('finder')">
+                    <span class="absolute -top-10 scale-0 group-hover:scale-100 bg-black bg-opacity-80 text-white text-[10px] px-2 py-1 rounded transition duration-150 whitespace-nowrap z-50">Finder</span>
+                    <i class="fa-regular fa-folder-open text-yellow-400 text-4xl drop-shadow-md"></i>
+                    <div class="w-1 h-1 bg-white rounded-full mt-1.5 opacity-0 transition-opacity duration-300" id="dot-finder"></div>
+                </div>
+
+                <!-- AnyMP4 Blu-ray Player -->
+                <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="openApp('anymp4')">
+                    <span class="absolute -top-10 scale-0 group-hover:scale-100 bg-black bg-opacity-80 text-white text-[10px] px-2 py-1 rounded transition duration-150 whitespace-nowrap z-50">AnyMP4 Blu-ray Player</span>
+                    <img src="https://www.anymp4.com/images/download/blu-ray-player.png" alt="AnyMP4" class="w-10 h-10 drop-shadow-md object-contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3502/3502685.png'">
+                    <div class="w-1 h-1 bg-white rounded-full mt-1 opacity-0 transition-opacity duration-300" id="dot-anymp4"></div>
+                </div>
+
+                <!-- Safari -->
+                <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="openApp('safari')">
+                    <span class="absolute -top-10 scale-0 group-hover:scale-100 bg-black bg-opacity-80 text-white text-[10px] px-2 py-1 rounded transition duration-150 whitespace-nowrap z-50">Safari</span>
+                    <i class="fa-brands fa-safari text-blue-400 text-4xl drop-shadow-md"></i>
+                    <div class="w-1 h-1 bg-white rounded-full mt-1.5 opacity-0 transition-opacity duration-300" id="dot-safari"></div>
+                </div>
+
+                <!-- Notes -->
+                <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="openApp('notes')">
+                    <span class="absolute -top-10 scale-0 group-hover:scale-100 bg-black bg-opacity-80 text-white text-[10px] px-2 py-1 rounded transition duration-150 whitespace-nowrap z-50">メモ帳</span>
+                    <i class="fa-regular fa-pen-to-square text-orange-400 text-4xl drop-shadow-md"></i>
+                    <div class="w-1 h-1 bg-white rounded-full mt-1.5 opacity-0 transition-opacity duration-300" id="dot-notes"></div>
+                </div>
+
+                <!-- Settings -->
+                <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="openApp('settings')">
+                    <span class="absolute -top-10 scale-0 group-hover:scale-100 bg-black bg-opacity-80 text-white text-[10px] px-2 py-1 rounded transition duration-150 whitespace-nowrap z-50">システム設定</span>
+                    <i class="fa-solid fa-gear text-gray-300 text-4xl drop-shadow-md"></i>
+                    <div class="w-1 h-1 bg-white rounded-full mt-1.5 opacity-0 transition-opacity duration-300" id="dot-settings"></div>
+                </div>
+
+                <div class="h-8 border-r border-white border-opacity-25 mx-2 self-center"></div>
+
+                <!-- Trash -->
+                <div class="dock-item group relative flex flex-col items-center cursor-pointer" onclick="emptyTrashAlert()">
+                    <span class="absolute -top-10 scale-0 group-hover:scale-100 bg-black bg-opacity-80 text-white text-[10px] px-2 py-1 rounded transition duration-150 whitespace-nowrap z-50">ゴミ箱</span>
+                    <i class="fa-regular fa-trash-can text-gray-400 text-3xl mb-1 drop-shadow-md hover:text-red-400 transition-colors"></i>
+                </div>
+            </nav>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION POPUP (No native alerts!) -->
+    <div id="toast" class="absolute top-10 right-4 glass px-5 py-3.5 rounded-xl shadow-2xl border border-white border-opacity-10 z-50 hidden transition-all duration-300 flex items-center space-x-3 text-sm">
+        <i class="fa-solid fa-circle-info text-blue-400 text-lg"></i>
+        <span id="toast-message" class="text-white"></span>
+    </div>
+
+    <!-- ABOUT THIS MAC MODAL -->
+    <div id="about-modal" class="absolute inset-0 bg-black bg-opacity-50 z-50 hidden flex justify-center items-center backdrop-blur-sm">
+        <div class="glass w-[360px] p-6 rounded-2xl flex flex-col items-center relative text-center text-gray-200">
+            <button onclick="closeAboutModal()" class="absolute top-3 left-3 w-3 h-3 bg-red-500 rounded-full hover:opacity-85"></button>
+            <i class="fa-brands fa-apple text-7xl text-white my-4"></i>
+            <h2 class="text-xl font-bold text-white mb-1">macOS Sequoia</h2>
+            <p class="text-xs text-gray-400 mb-6">バージョン 15.0.1 (シミュレータ)</p>
+            
+            <div class="w-full text-xs space-y-3.5 border-t border-white border-opacity-10 pt-4">
+                <div class="flex justify-between"><span class="text-gray-400">チップ:</span><span class="font-semibold text-white">Apple M3 Max</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">メモリ:</span><span class="font-semibold text-white">24 GB</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">グラフィックス:</span><span class="font-semibold text-white">Apple 14-core GPU</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">シリアル番号:</span><span class="font-semibold text-white">ANYMP4-BLURAY-PRO</span></div>
+            </div>
+            
+            <p class="text-[9px] text-gray-400 mt-6">TM and © 2026 Apple Inc. All Rights Reserved.</p>
+        </div>
+    </div>
+
+    <!-- INITIALIZATION AND LOGIC -->
+    <script>
+        // System wide States
+        let windowIdCounter = 1;
+        let activeApp = "Finder";
+        let isDarkMode = true;
+        let systemVolume = 80;
+        let systemBrightness = 100;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Custom list of movies available in Finder & AnyMP4
+        const mediaLibrary = [
+            { id: 1, title: "シン・エヴァンゲリオン劇場版 BD.iso", type: "iso", size: "44.2 GB", duration: 9300, previewUrl: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80", color: "#FF3B30", label: "Anime Blockbuster" },
+            { id: 2, title: "君の名は。_YourName_UHD.mp4", type: "mp4", size: "12.8 GB", duration: 6360, previewUrl: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80", color: "#007AFF", label: "Makoto Shinkai Classic" },
+            { id: 3, title: "千と千尋の神隠し_Ghibli_Remaster.mkv", type: "mkv", size: "28.5 GB", duration: 7500, previewUrl: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=800&q=80", color: "#34C759", label: "Ghibli Classic Master" }
+        ];
+
+        // AnyMP4 State
+        const playerState = {
+            isPlaying: false,
+            currentTime: 0,
+            duration: 0,
+            volume: 0.8,
+            currentTrack: null,
+            speed: 1.0,
+            audioChannel: "Stereo (2.0ch)",
+            subtitle: "日本語 (字幕)",
+            playlistOpen: false,
+            audioContext: null,
+            oscillator: null,
+            gainNode: null
+        };
+
+        // Simulated Filesystem in Notes
+        let savedNotes = [
+            { title: "ブルーレイ映画感想", content: "『君の名は。』4K HDR高画質で AnyMP4 Blu-ray Player にて再生してみた。音響とアニメーションが非常に美しく、音質も超高精細で満足。ディスクのロードもスムーズで素晴らしい！" },
+            { title: "アイディアリスト", content: "1. ブルーレイディスクライブラリのバックアップ\n2. 高音質サラウンドシステムの構築\n3. Macの整理" }
+        ];
+
+        // System clock in Japanese Locale
+        function updateClock() {
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const day = days[now.getDay()];
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('menu-clock').innerText = `${month}月${date}日(${day}) ${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Boot loader setup
+        window.onload = function() {
+            const loader = document.getElementById('boot-progress');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 20) + 10;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        document.getElementById('boot-screen').style.opacity = '0';
+                        setTimeout(() => {
+                            document.getElementById('boot-screen').style.display = 'none';
+                        }, 1000);
+                    }, 500);
+                }
+                loader.style.width = progress + '%';
+            }, 180);
+
+            // Pre-load background and start-up notification
+            setTimeout(() => {
+                showToast("macOS シミュレータへようこそ！ AnyMP4 プレーヤーで最高の視聴体験をお楽しみください。");
+                openApp('anymp4'); // Auto-load AnyMP4 Player on boot
+            }, 3000);
+        };
+
+        // Show elegant custom alerts inside the UI
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 5500);
+        }
+
+        function emptyTrashAlert() {
+            showToast("ゴミ箱は空です。");
+        }
+
+        // Apple dropdown system menu
+        function toggleSystemMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('apple-dropdown');
+            menu.classList.toggle('hidden');
+            document.getElementById('control-center').classList.add('hidden');
+        }
+
+        // Control Center popup
+        function toggleControlCenter(e) {
+            e.stopPropagation();
+            const ctrl = document.getElementById('control-center');
+            ctrl.classList.toggle('hidden');
+            document.getElementById('apple-dropdown').classList.add('hidden');
+        }
+
+        function changeBrightness(val) {
+            systemBrightness = val;
+            document.getElementById('dark-overlay').style.backgroundColor = `rgba(0,0,0,${(100 - val)/150})`;
+        }
+
+        function changeSystemVolume(val) {
+            systemVolume = val;
+            document.getElementById('menubar-vol').innerText = val + "%";
+            playerState.volume = val / 100;
+            if (playerState.gainNode) {
+                playerState.gainNode.gain.setValueAtTime(playerState.volume * 0.15, playerState.audioContext.currentTime);
+            }
+        }
+
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            const bg = document.getElementById('desktop-bg');
+            const toggleKnob = document.getElementById('dark-toggle-knob');
+            const toggleBg = document.getElementById('dark-mode-toggle');
+            
+            if (isDarkMode) {
+                bg.style.backgroundImage = "url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1920&q=80')";
+                toggleKnob.style.transform = "translateX(1.25rem)";
+                toggleBg.classList.add('bg-blue-600');
+                toggleBg.classList.remove('bg-gray-400');
+                document.getElementById('dark-overlay').style.backgroundColor = `rgba(0,0,0,0.2)`;
+            } else {
+                bg.style.backgroundImage = "url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=1920&q=80')";
+                toggleKnob.style.transform = "translateX(0)";
+                toggleBg.classList.remove('bg-blue-600');
+                toggleBg.classList.add('bg-gray-400');
+                document.getElementById('dark-overlay').style.backgroundColor = `rgba(0,0,0,0)`;
+            }
+            showToast(isDarkMode ? "ダークモードを有効にしました" : "ライトモードを有効にしました");
+        }
+
+        function shutdownSimulator() {
+            document.getElementById('boot-screen').style.display = 'flex';
+            document.getElementById('boot-screen').style.opacity = '1';
+            document.getElementById('boot-progress').style.width = '0%';
+            showToast("システムを終了しています...");
+            setTimeout(() => {
+                location.reload();
+            }, 2500);
+        }
+
+        function changeWallpaper(imageUrl) {
+            document.getElementById('desktop-bg').style.backgroundImage = `url('${imageUrl}')`;
+            showToast("壁紙を変更しました。");
+        }
+
+        function openAboutModal() {
+            document.getElementById('about-modal').classList.remove('hidden');
+            document.getElementById('apple-dropdown').classList.add('hidden');
+        }
+        function closeAboutModal() {
+            document.getElementById('about-modal').classList.add('hidden');
+        }
+
+        function deselectAllWindows() {
+            document.getElementById('apple-dropdown').classList.add('hidden');
+            document.getElementById('control-center').classList.add('hidden');
+        }
+
+        // AUDIO SYNTHESIS FOR VIDEO PLAYBACK (Pure browser, no real track file downloads required!)
+        function initSynthAudio() {
+            try {
+                if (!playerState.audioContext) {
+                    playerState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (playerState.audioContext.state === 'suspended') {
+                    playerState.audioContext.resume();
+                }
+            } catch (err) {
+                console.error("Audio Context Init Failed: ", err);
+            }
+        }
+
+        function playSynthTrack() {
+            initSynthAudio();
+            if (!playerState.audioContext) return;
+            
+            // If already generating, stop first
+            stopSynthTrack();
+
+            // Setup Synth Chain
+            playerState.oscillator = playerState.audioContext.createOscillator();
+            playerState.gainNode = playerState.audioContext.createGain();
+            
+            // Sound wave style (Cinema Space Pad tone)
+            playerState.oscillator.type = 'triangle';
+            
+            // Adjust frequency depending on speed or mock movies (E.g. Evangelion has lower dramatic tone)
+            let baseFreq = 110; 
+            if (playerState.currentTrack) {
+                if (playerState.currentTrack.id === 1) baseFreq = 85; // Deep dramatic
+                if (playerState.currentTrack.id === 2) baseFreq = 165; // High emotional
+                if (playerState.currentTrack.id === 3) baseFreq = 130; // Adventure
+            }
+
+            playerState.oscillator.frequency.setValueAtTime(baseFreq * playerState.speed, playerState.audioContext.currentTime);
+            
+            // Slow cinematic modulation (synthesize warm cinema rumble)
+            const modulation = playerState.audioContext.createOscillator();
+            const modulationGain = playerState.audioContext.createGain();
+            modulation.frequency.setValueAtTime(0.3, playerState.audioContext.currentTime); // 0.3Hz filter sweep
+            modulationGain.gain.setValueAtTime(15, playerState.audioContext.currentTime);
+            
+            modulation.connect(modulationGain);
+            modulationGain.connect(playerState.oscillator.frequency);
+            modulation.start();
+
+            playerState.gainNode.gain.setValueAtTime(playerState.volume * 0.15, playerState.audioContext.currentTime);
+            
+            playerState.oscillator.connect(playerState.gainNode);
+            playerState.gainNode.connect(playerState.audioContext.destination);
+            
+            playerState.oscillator.start();
+            
+            // Store reference to modulator oscillator to kill it on stop
+            playerState.modulator = modulation;
+        }
+
+        function stopSynthTrack() {
+            if (playerState.oscillator) {
+                try {
+                    playerState.oscillator.stop();
+                    playerState.oscillator.disconnect();
+                } catch(e){}
+                playerState.oscillator = null;
+            }
+            if (playerState.modulator) {
+                try {
+                    playerState.modulator.stop();
+                    playerState.modulator.disconnect();
+                } catch(e){}
+                playerState.modulator = null;
+            }
+        }
+
+
+        // WINDOW MANAGEMENT LOGIC (Multi-window, Drag & Drop, Touch-Enabled)
+        const openWindows = {};
+
+        function openApp(appKey) {
+            // Check dot indicators in Dock
+            const dot = document.getElementById(`dot-${appKey}`);
+            if (dot) dot.style.opacity = '1';
+
+            // Active Menu context update
+            let visualAppName = appKey.charAt(0).toUpperCase() + appKey.slice(1);
+            if (appKey === 'anymp4') visualAppName = "AnyMP4 Blu-ray Player";
+            if (appKey === 'notes') visualAppName = "メモ帳";
+            if (appKey === 'settings') visualAppName = "システム設定";
+            document.getElementById('active-app-menu').innerText = visualAppName;
+            activeApp = appKey;
+            updateMenuBarContext(appKey);
+
+            if (openWindows[appKey]) {
+                focusWindow(appKey);
+                return;
+            }
+
+            // Create customizable modern glassmorphism window
+            const win = document.createElement('div');
+            win.id = `window-${appKey}`;
+            win.className = "app-window absolute glass rounded-2xl shadow-2xl border border-white border-opacity-15 flex flex-col overflow-hidden pointer-events-auto select-none";
+            
+            // App-specific dimensions
+            let defaultWidth = 720;
+            let defaultHeight = 480;
+            if (appKey === 'anymp4') {
+                defaultWidth = 840;
+                defaultHeight = 540;
+            } else if (appKey === 'safari') {
+                defaultWidth = 800;
+                defaultHeight = 520;
+            } else if (appKey === 'notes') {
+                defaultWidth = 580;
+                defaultHeight = 400;
+            } else if (appKey === 'settings') {
+                defaultWidth = 640;
+                defaultHeight = 440;
+            } else if (appKey === 'finder') {
+                defaultWidth = 600;
+                defaultHeight = 420;
+            }
+
+            // Safe screen placement
+            const winX = 50 + (windowIdCounter * 25) % (window.innerWidth - defaultWidth - 100);
+            const winY = 60 + (windowIdCounter * 25) % (window.innerHeight - defaultHeight - 150);
+            windowIdCounter++;
+
+            win.style.width = `${defaultWidth}px`;
+            win.style.height = `${defaultHeight}px`;
+            win.style.left = `${winX}px`;
+            win.style.top = `${winY}px`;
+            win.style.zIndex = 40;
+
+            // Header/Titlebar setup with Red/Yellow/Green macOS window triggers
+            const header = document.createElement('div');
+            header.className = "w-full h-11 bg-opacity-80 flex items-center justify-between px-4 border-b border-white border-opacity-10 cursor-grab active:cursor-grabbing select-none";
+            header.innerHTML = `
+                <div class="flex items-center space-x-2.5">
+                    <button onclick="closeApp('${appKey}', event)" class="w-3 h-3 bg-red-500 rounded-full hover:bg-red-600 transition flex items-center justify-center text-[7px] text-red-900 font-bold"><span class="opacity-0 hover:opacity-100">×</span></button>
+                    <button onclick="minimizeApp('${appKey}', event)" class="w-3 h-3 bg-yellow-500 rounded-full hover:bg-yellow-600 transition flex items-center justify-center text-[7px] text-yellow-900 font-bold"><span class="opacity-0 hover:opacity-100">-</span></button>
+                    <button onclick="maximizeApp('${appKey}', event)" class="w-3 h-3 bg-green-500 rounded-full hover:bg-green-600 transition flex items-center justify-center text-[6px] text-green-900 font-bold"><span class="opacity-0 hover:opacity-100">+</span></button>
+                </div>
+                <div class="absolute left-1/2 transform -translate-x-1/2 text-xs font-semibold tracking-wide text-gray-200 pointer-events-none flex items-center space-x-1.5">
+                    ${appKey === 'anymp4' ? `<img src='https://www.anymp4.com/images/download/blu-ray-player.png' class='w-4 h-4 object-contain'>` : ''}
+                    <span>${getAppTitleJapanese(appKey)}</span>
+                </div>
+                <div class="w-12"></div>
+            `;
+
+            const body = document.createElement('div');
+            body.className = "flex-grow overflow-hidden relative";
+            body.innerHTML = getAppContentHTML(appKey);
+
+            win.appendChild(header);
+            win.appendChild(body);
+
+            // Add resizing grip to bottom right corner
+            const resizer = document.createElement('div');
+            resizer.className = "absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-transparent";
+            win.appendChild(resizer);
+
+            document.getElementById('window-layer').appendChild(win);
+            openWindows[appKey] = {
+                element: win,
+                x: winX, y: winY, w: defaultWidth, h: defaultHeight,
+                isMaximized: false
+            };
+
+            setupDragAndDrop(win, header, appKey);
+            setupResize(win, resizer, appKey);
+            focusWindow(appKey);
+
+            if (appKey === 'anymp4') {
+                initAnyMP4Player();
+            }
+        }
+
+        function getAppTitleJapanese(appKey) {
+            switch(appKey) {
+                case 'anymp4': return "AnyMP4 Blu-ray Player";
+                case 'safari': return "Safari";
+                case 'notes': return "メモ帳";
+                case 'settings': return "システム設定";
+                case 'finder': return "Finder - ブルーレイ映画";
+                default: return "App";
+            }
+        }
+
+        // Top Menubar options updates dynamically when switching active window context
+        function updateMenuBarContext(appKey) {
+            const container = document.getElementById('contextual-menus');
+            container.innerHTML = "";
+            let items = [];
+            
+            if (appKey === 'anymp4') {
+                items = ["ファイル", "再生", "チャプター", "音声", "字幕", "ツール", "コントロール", "ヘルプ"];
+            } else if (appKey === 'safari') {
+                items = ["ファイル", "編集", "表示", "履歴", "ブックマーク", "ウインドウ", "ヘルプ"];
+            } else if (appKey === 'finder') {
+                items = ["ファイル", "編集", "表示", "移動", "ウインドウ", "ヘルプ"];
+            } else {
+                items = ["ファイル", "編集", "フォーマット", "表示", "ウインドウ", "ヘルプ"];
+            }
+
+            items.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = "hover:bg-white hover:bg-opacity-20 px-2 py-0.5 rounded transition";
+                btn.innerText = item;
+                btn.onclick = () => showToast(`メニュー [${item}] がクリックされました。`);
+                container.appendChild(btn);
+            });
+            container.classList.remove('hidden');
+        }
+
+        function focusWindow(appKey) {
+            // Push active window to top stack
+            Object.keys(openWindows).forEach(key => {
+                if (openWindows[key]) {
+                    openWindows[key].element.style.zIndex = 30;
+                    openWindows[key].element.classList.add('opacity-90');
+                }
+            });
+            if (openWindows[appKey]) {
+                openWindows[appKey].element.style.zIndex = 40;
+                openWindows[appKey].element.classList.remove('opacity-90');
+                activeApp = appKey;
+                document.getElementById('active-app-menu').innerText = getAppTitleJapanese(appKey);
+                updateMenuBarContext(appKey);
+            }
+        }
+
+        function closeApp(appKey, event) {
+            if (event) event.stopPropagation();
+            if (openWindows[appKey]) {
+                if (appKey === 'anymp4') {
+                    stopSynthTrack();
+                    playerState.isPlaying = false;
+                }
+                openWindows[appKey].element.remove();
+                delete openWindows[appKey];
+            }
+            const dot = document.getElementById(`dot-${appKey}`);
+            if (dot) dot.style.opacity = '0';
+        }
+
+        function minimizeApp(appKey, event) {
+            if (event) event.stopPropagation();
+            if (openWindows[appKey]) {
+                openWindows[appKey].element.classList.add('scale-0');
+                openWindows[appKey].element.classList.add('opacity-0');
+                showToast(`${getAppTitleJapanese(appKey)} を最小化しました。ドックから再度開くことができます。`);
+            }
+        }
+
+        function maximizeApp(appKey, event) {
+            if (event) event.stopPropagation();
+            const winInfo = openWindows[appKey];
+            if (!winInfo) return;
+
+            const win = winInfo.element;
+            if (!winInfo.isMaximized) {
+                // Save old geometry
+                winInfo.prevX = win.style.left;
+                winInfo.prevY = win.style.top;
+                winInfo.prevW = win.style.width;
+                winInfo.prevH = win.style.height;
+
+                win.style.left = "0px";
+                win.style.top = "28px"; // Below standard bar
+                win.style.width = "100vw";
+                win.style.height = "calc(100vh - 110px)"; // Buffer for Dock
+                winInfo.isMaximized = true;
+            } else {
+                win.style.left = winInfo.prevX;
+                win.style.top = winInfo.prevY;
+                win.style.width = winInfo.prevW;
+                win.style.height = winInfo.prevH;
+                winInfo.isMaximized = false;
+            }
+        }
+
+        // DRAG & DRAG FUNCTIONALITY (Supports mobile touches & desktop mice)
+        function setupDragAndDrop(win, header, appKey) {
+            let active = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+
+            header.addEventListener("mousedown", dragStart);
+            header.addEventListener("touchstart", dragStart, { passive: true });
+            document.addEventListener("mousemove", drag);
+            document.addEventListener("touchmove", drag, { passive: false });
+            document.addEventListener("mouseup", dragEnd);
+            document.addEventListener("touchend", dragEnd);
+
+            function dragStart(e) {
+                focusWindow(appKey);
+                if (openWindows[appKey].isMaximized) return;
+
+                const event = e.type === "touchstart" ? e.touches[0] : e;
+                initialX = event.clientX - xOffset;
+                initialY = event.clientY - yOffset;
+                
+                active = true;
+            }
+
+            function drag(e) {
+                if (!active) return;
+                
+                const event = e.type === "touchmove" ? e.touches[0] : e;
+                e.preventDefault(); // Prevents screen scrolling on touch devices
+
+                currentX = event.clientX - initialX;
+                currentY = event.clientY - initialY;
+
+                xOffset = currentX;
+                yOffset = currentY;
+
+                const finalX = parseInt(win.style.left || 0) + currentX;
+                const finalY = parseInt(win.style.top || 0) + currentY;
+
+                // Simple boundaries protection
+                if (finalY > 10 && finalY < window.innerHeight - 100) {
+                    win.style.left = `${finalX}px`;
+                    win.style.top = `${finalY}px`;
+                }
+                
+                // reset relative offsets
+                initialX = event.clientX;
+                initialY = event.clientY;
+                xOffset = 0;
+                yOffset = 0;
+            }
+
+            function dragEnd() {
+                active = false;
+            }
+        }
+
+        // RESIZE WINDOW LOGIC
+        function setupResize(win, resizer, appKey) {
+            resizer.addEventListener('mousedown', initResize, false);
+
+            function initResize(e) {
+                e.preventDefault();
+                focusWindow(appKey);
+                window.addEventListener('mousemove', StartResize, false);
+                window.addEventListener('mouseup', StopResize, false);
+            }
+
+            function StartResize(e) {
+                if (openWindows[appKey].isMaximized) return;
+                const newWidth = e.clientX - win.getBoundingClientRect().left;
+                const newHeight = e.clientY - win.getBoundingClientRect().top;
+                
+                // Boundaries protection
+                if (newWidth > 350) win.style.width = `${newWidth}px`;
+                if (newHeight > 250) win.style.height = `${newHeight}px`;
+            }
+
+            function StopResize() {
+                window.removeEventListener('mousemove', StartResize, false);
+                window.removeEventListener('mouseup', StopResize, false);
+            }
+        }
+
+        // GET CONTENT HTML FOR EACH APP FOR EMBEDDING
+        function getAppContentHTML(appKey) {
+            switch(appKey) {
+                case 'anymp4':
+                    return `
+                    <div class="h-full bg-[#111215] flex flex-col justify-between text-white font-sans text-xs select-none">
+                        <!-- Top Toolbar / Play Menu -->
+                        <div class="bg-[#18191d] px-4 py-2 flex items-center justify-between border-b border-black border-opacity-40">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-blue-600 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider">PRO VERSION</span>
+                                <span class="text-gray-400">AnyMP4 4K ブルーレイプレイヤー</span>
+                            </div>
+                            <div class="flex items-center space-x-3 text-gray-400">
+                                <button onclick="showToast('4K 超高解像度ハードウェア加速技術が有効です。')" class="hover:text-white flex items-center space-x-1">
+                                    <i class="fa-solid fa-microchip text-xs text-blue-400"></i>
+                                    <span class="text-[10px]">HW加速: ON</span>
+                                </button>
+                                <span class="text-gray-600">|</span>
+                                <button onclick="togglePlaylist()" class="hover:text-white"><i class="fa-solid fa-list-ul"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow flex relative overflow-hidden">
+                            <!-- Left: Side Control Library for Disc loading -->
+                            <div class="w-1/4 bg-[#141518] p-3 flex flex-col justify-between border-r border-black border-opacity-40 z-20">
+                                <div class="space-y-4">
+                                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">ソースメディア</p>
+                                    <div class="space-y-2">
+                                        <button onclick="loadSampleMedia(1)" class="w-full text-left p-2 rounded hover:bg-[#1f2127] active:bg-[#282a31] border border-transparent hover:border-gray-800 transition flex items-start space-x-2">
+                                            <i class="fa-solid fa-compact-disc text-blue-500 text-base mt-0.5"></i>
+                                            <div>
+                                                <div class="font-bold text-white leading-tight truncate w-32">エヴァンゲリオン</div>
+                                                <div class="text-[10px] text-gray-500">BD.iso / 44GB</div>
+                                            </div>
+                                        </button>
+                                        <button onclick="loadSampleMedia(2)" class="w-full text-left p-2 rounded hover:bg-[#1f2127] active:bg-[#282a31] border border-transparent hover:border-gray-800 transition flex items-start space-x-2">
+                                            <i class="fa-solid fa-file-video text-blue-400 text-base mt-0.5"></i>
+                                            <div>
+                                                <div class="font-bold text-white leading-tight truncate w-32">君の名は。</div>
+                                                <div class="text-[10px] text-gray-500">UHD.mp4 / 12GB</div>
+                                            </div>
+                                        </button>
+                                        <button onclick="loadSampleMedia(3)" class="w-full text-left p-2 rounded hover:bg-[#1f2127] active:bg-[#282a31] border border-transparent hover:border-gray-800 transition flex items-start space-x-2">
+                                            <i class="fa-solid fa-file-video text-green-400 text-base mt-0.5"></i>
+                                            <div>
+                                                <div class="font-bold text-white leading-tight truncate w-32">千と千尋の神隠し</div>
+                                                <div class="text-[10px] text-gray-500">BD.mkv / 28GB</div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-2 bg-[#1b1c21] p-2.5 rounded-lg border border-white border-opacity-5">
+                                    <p class="text-[9px] text-gray-400 leading-relaxed font-sans">
+                                        <strong>AnyMP4 BD プレーヤー</strong><br>
+                                        市販BD/DVDディスク、フォルダ、ISOをオリジナル無損失のシネマ音響で極限まで鮮明に再生します。
+                                    </p>
+                                    <button onclick="openApp('safari')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-2 rounded text-[10px] text-center transition">
+                                        公式サイトで詳しく
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Right: The Interactive Player Core Screen (with Canvas simulator) -->
+                            <div class="flex-grow flex flex-col justify-between bg-[#0b0c0e] relative">
+                                
+                                <!-- Playback Canvas Screen -->
+                                <div class="flex-grow w-full h-full relative group flex items-center justify-center overflow-hidden">
+                                    <!-- Dynamic Video Simulation Canvas -->
+                                    <canvas id="player-canvas" class="w-full h-full object-cover absolute inset-0 bg-black"></canvas>
+                                    
+                                    <!-- Idle Mode screen (visible if not playing) -->
+                                    <div id="player-idle-ui" class="absolute inset-0 bg-gradient-to-tr from-[#141822] via-[#0b0c0e] to-[#121115] flex flex-col items-center justify-center text-center space-y-6 z-10 transition-opacity duration-300">
+                                        <!-- AnyMP4 Icon fallback -->
+                                        <div class="relative group">
+                                            <img src="https://www.anymp4.com/images/download/blu-ray-player.png" alt="AnyMP4" class="w-24 h-24 drop-shadow-2xl hover:scale-105 transition-all duration-300 pointer-events-auto" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3502/3502685.png'">
+                                            <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white font-bold px-3 py-1 rounded-full text-[9px] border border-blue-400 animate-pulse whitespace-nowrap">BD / DVD 4K Ultra HD</span>
+                                        </div>
+                                        
+                                        <div class="space-y-1">
+                                            <h3 class="text-lg font-bold text-gray-100">AnyMP4 ブルーレイプレーヤー</h3>
+                                            <p class="text-[10px] text-gray-400">無損失高音質ハイエンドメディア再生ステーション</p>
+                                        </div>
+
+                                        <!-- Load Actions -->
+                                        <div class="flex items-center space-x-3 pt-2">
+                                            <button onclick="triggerFileBrowser()" class="bg-[#1f222b] hover:bg-[#2b303d] border border-white border-opacity-10 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center space-x-2.5 shadow-lg transition">
+                                                <i class="fa-solid fa-folder-open text-blue-400 text-sm"></i>
+                                                <span>ファイルを開く...</span>
+                                            </button>
+                                            <button onclick="triggerDiscLoader()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center space-x-2.5 shadow-lg transition">
+                                                <i class="fa-solid fa-compact-disc text-white text-sm animate-spin-slow"></i>
+                                                <span>ディスクを開く...</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Quick Hover Display overlays -->
+                                    <div id="playing-track-overlay" class="absolute top-4 left-4 glass px-3 py-1.5 rounded-lg text-white font-bold opacity-0 transition-opacity duration-300 flex items-center space-x-2">
+                                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                        <span id="playing-track-title">再生中</span>
+                                    </div>
+                                    
+                                    <!-- Dynamic Subtitle Overlay -->
+                                    <div id="subtitle-overlay" class="absolute bottom-16 left-1/2 transform -translate-x-1/2 text-white font-medium text-sm drop-shadow-md text-center py-1.5 px-3 rounded-lg hidden z-15 select-none" style="background-color: rgba(0,0,0,0.65);">
+                                        字幕: 日本語
+                                    </div>
+                                </div>
+
+                                <!-- Playlist Side Drawer (Slide in/out) -->
+                                <div id="playlist-drawer" class="absolute top-0 right-0 w-52 h-full bg-[#121316] border-l border-black border-opacity-40 transform translate-x-full transition-transform duration-300 z-30 flex flex-col justify-between">
+                                    <div class="p-3 border-b border-white border-opacity-5 flex justify-between items-center bg-[#18191c]">
+                                        <span class="font-bold">再生プレイリスト</span>
+                                        <button onclick="togglePlaylist()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                                    </div>
+                                    <div class="flex-grow overflow-y-auto p-1.5 space-y-1">
+                                        ${mediaLibrary.map(item => `
+                                            <button onclick="loadSampleMedia(${item.id})" class="w-full text-left p-1.5 rounded hover:bg-[#1a1b21] flex items-center justify-between transition text-[10px]">
+                                                <div class="truncate pr-2">
+                                                    <div class="font-semibold text-gray-200 truncate">${item.title}</div>
+                                                    <div class="text-[8px] text-gray-500">${item.size}</div>
+                                                </div>
+                                                <i class="fa-solid fa-play-circle text-gray-500 hover:text-blue-500"></i>
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                    <div class="p-2 border-t border-white border-opacity-5">
+                                        <button onclick="showToast('任意のディスクを追加できます。')" class="w-full bg-[#1a1b21] hover:bg-[#21232b] py-1 text-center text-gray-400 rounded text-[9px] transition">
+                                            + 新規追加
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Control Deck Dashboard -->
+                                <div class="bg-[#15161a] border-t border-black border-opacity-40 p-3 z-20">
+                                    <!-- Timeline scrubber bar -->
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <span id="player-time-current" class="text-[10px] text-gray-400 w-10 text-right">00:00:00</span>
+                                        <input id="player-timeline" type="range" min="0" max="100" value="0" oninput="scrubVideo(this.value)" class="flex-grow accent-blue-500 h-1 bg-gray-800 rounded-lg cursor-pointer">
+                                        <span id="player-time-total" class="text-[10px] text-gray-400 w-10 text-left">00:00:00</span>
+                                    </div>
+
+                                    <!-- Main Action Triggers -->
+                                    <div class="flex items-center justify-between">
+                                        <!-- Speed, Audio Track & Subtitles selectors -->
+                                        <div class="flex items-center space-x-3 text-gray-400">
+                                            <div class="relative group">
+                                                <button class="hover:text-white flex items-center space-x-1 font-semibold text-[10px]">
+                                                    <i class="fa-solid fa-gauge-high"></i>
+                                                    <span id="player-speed-btn">1.0x</span>
+                                                </button>
+                                                <!-- Speed options -->
+                                                <div class="absolute bottom-5 left-0 bg-[#1f2127] border border-gray-800 rounded-lg hidden group-hover:block w-16 p-1 text-center text-[10px] shadow-2xl space-y-1">
+                                                    <button onclick="setPlayerSpeed(0.5)" class="w-full hover:bg-blue-600 rounded text-white py-0.5">0.5x</button>
+                                                    <button onclick="setPlayerSpeed(1.0)" class="w-full hover:bg-blue-600 rounded text-white py-0.5">1.0x</button>
+                                                    <button onclick="setPlayerSpeed(1.5)" class="w-full hover:bg-blue-600 rounded text-white py-0.5">1.5x</button>
+                                                    <button onclick="setPlayerSpeed(2.0)" class="w-full hover:bg-blue-600 rounded text-white py-0.5">2.0x</button>
+                                                </div>
+                                            </div>
+                                            <div class="relative group">
+                                                <button class="hover:text-white flex items-center space-x-1 text-[10px]">
+                                                    <i class="fa-solid fa-music"></i>
+                                                    <span id="player-audio-btn">音声: 2.0ch</span>
+                                                </button>
+                                                <!-- Audio channels selection -->
+                                                <div class="absolute bottom-5 left-0 bg-[#1f2127] border border-gray-800 rounded-lg hidden group-hover:block w-32 p-1 text-[10px] shadow-2xl space-y-1">
+                                                    <button onclick="setAudioChannel('Stereo (2.0ch)')" class="w-full hover:bg-blue-600 rounded text-white py-0.5 text-left px-2">Stereo (2.0ch)</button>
+                                                    <button onclick="setAudioChannel('Surround (5.1ch)')" class="w-full hover:bg-blue-600 rounded text-white py-0.5 text-left px-2">Surround (5.1ch)</button>
+                                                    <button onclick="setAudioChannel('Dolby Atmos')" class="w-full hover:bg-blue-600 rounded text-white py-0.5 text-left px-2">Dolby Atmos</button>
+                                                </div>
+                                            </div>
+                                            <div class="relative group">
+                                                <button class="hover:text-white flex items-center space-x-1 text-[10px]">
+                                                    <i class="fa-solid fa-closed-captioning"></i>
+                                                    <span id="player-sub-btn">字幕: ON</span>
+                                                </button>
+                                                <!-- Subtitle configurations -->
+                                                <div class="absolute bottom-5 left-0 bg-[#1f2127] border border-gray-800 rounded-lg hidden group-hover:block w-28 p-1 text-[10px] shadow-2xl space-y-1">
+                                                    <button onclick="setSubtitle('日本語 (字幕)')" class="w-full hover:bg-blue-600 rounded text-white py-0.5 text-left px-2">日本語 (字幕)</button>
+                                                    <button onclick="setSubtitle('English (Sub)')" class="w-full hover:bg-blue-600 rounded text-white py-0.5 text-left px-2">English (Sub)</button>
+                                                    <button onclick="setSubtitle('None')" class="w-full hover:bg-blue-600 rounded text-white py-0.5 text-left px-2">字幕をオフ</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Core Controls Playback triggers -->
+                                        <div class="flex items-center space-x-5">
+                                            <button onclick="playPrevTrack()" class="text-gray-400 hover:text-white text-base transition"><i class="fa-solid fa-backward-step"></i></button>
+                                            <button onclick="toggleVideoPlayback()" id="main-play-trigger" class="w-10 h-10 bg-blue-600 hover:bg-blue-500 rounded-full flex items-center justify-center text-white text-base shadow-lg transition transform active:scale-95">
+                                                <i class="fa-solid fa-play"></i>
+                                            </button>
+                                            <button onclick="stopVideoPlayback()" class="text-gray-400 hover:text-white text-base transition"><i class="fa-solid fa-stop"></i></button>
+                                            <button onclick="playNextTrack()" class="text-gray-400 hover:text-white text-base transition"><i class="fa-solid fa-forward-step"></i></button>
+                                        </div>
+
+                                        <!-- Auxiliary (Volume and Fullscreen) -->
+                                        <div class="flex items-center space-x-3.5 text-gray-400">
+                                            <div class="flex items-center space-x-2">
+                                                <button onclick="muteToggle()" id="player-volume-icon" class="hover:text-white"><i class="fa-solid fa-volume-high"></i></button>
+                                                <input id="player-vol-scrub" type="range" min="0" max="100" value="80" oninput="adjustPlayerVolume(this.value)" class="w-16 accent-blue-500 h-1 bg-gray-800 rounded-lg cursor-pointer">
+                                            </div>
+                                            <button onclick="toggleVideoFullscreen()" class="hover:text-white"><i class="fa-solid fa-expand"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+
+                case 'safari':
+                    return `
+                    <div class="h-full bg-white flex flex-col justify-between text-black select-text">
+                        <!-- Navigation bar standard Safari style -->
+                        <div class="bg-gray-100 px-4 py-2 flex items-center space-x-4 border-b border-gray-200">
+                            <div class="flex space-x-2">
+                                <button class="w-6 h-6 hover:bg-gray-200 rounded flex items-center justify-center" onclick="showToast('履歴はありません')"><i class="fa-solid fa-chevron-left text-xs text-gray-400"></i></button>
+                                <button class="w-6 h-6 hover:bg-gray-200 rounded flex items-center justify-center" onclick="showToast('進む履歴はありません')"><i class="fa-solid fa-chevron-right text-xs text-gray-400"></i></button>
+                            </div>
+                            <div class="flex-grow bg-gray-200 bg-opacity-70 rounded-lg px-3 py-1 flex items-center justify-between text-[11px] text-gray-600 border border-transparent focus-within:border-blue-400">
+                                <div class="flex items-center space-x-1.5 w-full">
+                                    <i class="fa-solid fa-lock text-[9px] text-green-600"></i>
+                                    <span class="truncate w-full font-sans">https://www.anymp4.jp/blu-ray-player/</span>
+                                </div>
+                                <button class="hover:text-black" onclick="showToast('再読み込み中...')"><i class="fa-solid fa-rotate-right text-[10px]"></i></button>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="w-6 h-6 hover:bg-gray-200 rounded flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-up-from-bracket text-xs"></i></button>
+                                <button class="w-6 h-6 hover:bg-gray-200 rounded flex items-center justify-center text-gray-600" onclick="showToast('お気に入りに登録しました')"><i class="fa-regular fa-star text-xs"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Web Container -->
+                        <div class="flex-grow overflow-y-auto p-6 bg-gray-50 leading-relaxed text-sm">
+                            <div class="max-w-2xl mx-auto space-y-8 py-4">
+                                <div class="flex items-center space-x-4">
+                                    <img src="https://www.anymp4.com/images/download/blu-ray-player.png" class="w-16 h-16 drop-shadow-xl" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3502/3502685.png'">
+                                    <div>
+                                        <h1 class="text-2xl font-black text-gray-900 tracking-tight">AnyMP4 ブルーレイプレーヤー</h1>
+                                        <p class="text-xs text-blue-600 font-bold">Mac & Windows 用 最上級超高画質メディアプレイヤー</p>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-xl space-y-1">
+                                    <h4 class="font-bold text-blue-900 text-xs">【新発売セール 30%OFF】極上のホームシアターをご自宅で！</h4>
+                                    <p class="text-[11px] text-blue-800">
+                                        ブルーレイディスク/DVDディスクだけでなく、4K/1080P HDビデオ、H.265/HEVCコーデック、ロスレスハイレゾオーディオ（FLAC、DTS-HD Master Audio等）のマルチ再生に完全対応。
+                                    </p>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 space-y-2">
+                                        <h3 class="font-bold text-gray-900 flex items-center space-x-1.5"><i class="fa-solid fa-compact-disc text-blue-500"></i> <span>BD/DVD 完全無制限再生</span></h3>
+                                        <p class="text-[11px] text-gray-600">最新リリースの暗号化された商業ブルーレイディスクやDVDをリージョンコード制限なく快適にデコードしてロードします。</p>
+                                    </div>
+                                    <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200 space-y-2">
+                                        <h3 class="font-bold text-gray-900 flex items-center space-x-1.5"><i class="fa-solid fa-sliders text-green-500"></i> <span>映像・音響カスタマイザー</span></h3>
+                                        <p class="text-[11px] text-gray-600">輝度、コントラスト、色相、アスペクト比を好みに合わせて細かく調整。DTSやドルビーサラウンドなど映画館さながらの立体オーディオを楽しめます。</p>
+                                    </div>
+                                </div>
+
+                                <div class="text-center pt-4">
+                                    <button onclick="openApp('anymp4')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5">
+                                        <i class="fa-solid fa-cloud-arrow-down mr-2"></i> 無料でダウンロード / 今すぐ起動
+                                    </button>
+                                    <p class="text-[10px] text-gray-400 mt-2">macOS 10.12 以上、または Windows 11/10/8/7 対応</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+
+                case 'notes':
+                    return `
+                    <div class="h-full bg-[#1e1e1e] flex text-white select-text">
+                        <!-- Sidebar Notes list -->
+                        <div class="w-1/3 bg-[#151515] p-2 flex flex-col justify-between border-r border-white border-opacity-5">
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-center p-2">
+                                    <span class="text-[10px] font-bold text-gray-500 uppercase">マイノート</span>
+                                    <button onclick="createNewNote()" class="text-orange-400 hover:text-white"><i class="fa-regular fa-pen-to-square"></i></button>
+                                </div>
+                                <div id="notes-list-holder" class="space-y-1">
+                                    <!-- Dynamic notes loaded here -->
+                                </div>
+                            </div>
+                            <div class="p-2 border-t border-white border-opacity-5 text-[10px] text-gray-500 text-center">
+                                iCloudと同期中
+                            </div>
+                        </div>
+
+                        <!-- Note Editor -->
+                        <div class="flex-grow flex flex-col bg-[#1e1e1e]">
+                            <div class="p-3 bg-[#1a1a1a] flex justify-between items-center border-b border-white border-opacity-5">
+                                <input id="editor-title" type="text" oninput="saveCurrentNoteText()" class="bg-transparent font-bold text-sm text-white focus:outline-none w-full" placeholder="ノートタイトル">
+                                <button onclick="deleteCurrentNote()" class="text-gray-400 hover:text-red-400 text-xs"><i class="fa-regular fa-trash-can"></i></button>
+                            </div>
+                            <textarea id="editor-body" oninput="saveCurrentNoteText()" class="flex-grow bg-transparent p-4 text-xs leading-relaxed text-gray-200 focus:outline-none resize-none" placeholder="ここにメモを入力してください..."></textarea>
+                        </div>
+                    </div>
+                    `;
+
+                case 'settings':
+                    return `
+                    <div class="h-full bg-[#1c1c1e] text-white flex select-none">
+                        <!-- Sidebar Settings items -->
+                        <div class="w-1/3 bg-[#2c2c2e] p-3 space-y-2 border-r border-black border-opacity-30">
+                            <div class="flex items-center space-x-3 p-2 bg-blue-600 bg-opacity-20 rounded-xl">
+                                <i class="fa-solid fa-circle-user text-2xl text-blue-400"></i>
+                                <div>
+                                    <div class="font-bold text-xs text-white">Apple ID</div>
+                                    <div class="text-[9px] text-gray-400">anymp4@icloud.com</div>
+                                </div>
+                            </div>
+
+                            <div class="border-b border-white border-opacity-5 my-2"></div>
+
+                            <button onclick="switchSettingsTab('general')" class="w-full text-left p-2 rounded-lg hover:bg-white hover:bg-opacity-10 text-xs font-semibold flex items-center space-x-2">
+                                <i class="fa-solid fa-laptop text-blue-400"></i>
+                                <span>一般システム情報</span>
+                            </button>
+                            <button onclick="switchSettingsTab('wallpaper')" class="w-full text-left p-2 rounded-lg hover:bg-white hover:bg-opacity-10 text-xs font-semibold flex items-center space-x-2">
+                                <i class="fa-solid fa-image text-purple-400"></i>
+                                <span>壁紙の変更</span>
+                            </button>
+                            <button onclick="switchSettingsTab('display')" class="w-full text-left p-2 rounded-lg hover:bg-white hover:bg-opacity-10 text-xs font-semibold flex items-center space-x-2">
+                                <i class="fa-solid fa-desktop text-green-400"></i>
+                                <span>ディスプレイ・音響</span>
+                            </button>
+                        </div>
+
+                        <!-- Settings details container -->
+                        <div id="settings-tab-content" class="flex-grow p-5 overflow-y-auto space-y-5 text-xs">
+                            <!-- Dynamically loaded -->
+                        </div>
+                    </div>
+                    `;
+
+                case 'finder':
+                    return `
+                    <div class="h-full bg-[#1e1e24] text-white flex flex-col justify-between">
+                        <!-- Finder Top Path/Nav bar -->
+                        <div class="bg-[#2a2a32] px-4 py-2 border-b border-black border-opacity-40 flex items-center justify-between text-xs text-gray-400">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex space-x-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-gray-600"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-gray-600"></span>
+                                </div>
+                                <span class="font-bold text-white">ブルーレイ映画フォルダ</span>
+                            </div>
+                            <div class="flex items-center space-x-3 text-[10px]">
+                                <span>表示: グリッド</span>
+                                <i class="fa-solid fa-grip-vertical"></i>
+                            </div>
+                        </div>
+
+                        <!-- Folders & movies view -->
+                        <div class="flex-grow p-5 overflow-y-auto grid grid-cols-3 gap-4">
+                            ${mediaLibrary.map(item => `
+                                <div ondoubleclick="openMediaInAnyMP4(${item.id})" class="flex flex-col items-center justify-center p-3 rounded-xl hover:bg-white hover:bg-opacity-10 cursor-pointer text-center group border border-transparent hover:border-white hover:border-opacity-10 transition">
+                                    <div class="relative w-16 h-16 flex items-center justify-center mb-1">
+                                        <i class="fa-solid fa-compact-disc text-blue-500 text-4xl group-hover:scale-110 transition duration-200"></i>
+                                        <span class="absolute bottom-1 right-1 bg-red-600 text-white font-bold text-[8px] px-1.5 py-0.5 rounded uppercase">${item.type}</span>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-gray-200 leading-tight truncate w-full" title="${item.title}">${item.title}</span>
+                                    <span class="text-[8px] text-gray-500 mt-0.5">${item.size}</span>
+                                </div>
+                            `).join('')}
+
+                            <div onclick="showToast('Blu-ray仮想ディスクを追加しました。')" class="flex flex-col items-center justify-center p-3 rounded-xl hover:bg-white hover:bg-opacity-10 cursor-pointer text-center group border-2 border-dashed border-gray-600 hover:border-blue-500 transition">
+                                <i class="fa-solid fa-circle-plus text-gray-500 text-3xl group-hover:text-blue-500 transition mb-1"></i>
+                                <span class="text-[9px] font-semibold text-gray-400">新規ディスクマウント</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#1b1b21] px-4 py-2.5 border-t border-black border-opacity-40 flex justify-between items-center text-[10px] text-gray-500">
+                            <span>項目数: 3 / 利用可能スペース: 842 GB (SSD)</span>
+                            <span class="text-blue-400 font-bold"><i class="fa-solid fa-shield"></i> セキュア接続</span>
+                        </div>
+                    </div>
+                    `;
+                default:
+                    return `<div class="p-4 text-white">App Content here</div>`;
+            }
+        }
+
+
+        // ANYMP4 BLUE-RAY PLAYER - SIMULATED PLAYBACK CORE
+        let canvasAnimFrame = null;
+        let selectedNoteIndex = 0;
+
+        function initAnyMP4Player() {
+            const canvas = document.getElementById('player-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            // Set scale size
+            canvas.width = 600;
+            canvas.height = 360;
+
+            // Draw a high fidelity initial background or loaded video placeholder
+            ctx.fillStyle = '#0a0a0c';
+            ctx.fillRect(0,0,canvas.width, canvas.height);
+
+            // Trigger canvas draw cycle
+            function render() {
+                if (playerState.isPlaying) {
+                    drawAnimatedVideoFrame(ctx, canvas);
+                    // Update progress scrub bar & timing dynamically
+                    updatePlaybackTime();
+                } else {
+                    // Static preview when paused
+                    if (playerState.currentTrack) {
+                        drawPausedVideoFrame(ctx, canvas);
+                    } else {
+                        drawIdleBrandingFrame(ctx, canvas);
+                    }
+                }
+                canvasAnimFrame = requestAnimationFrame(render);
+            }
+
+            if (canvasAnimFrame) cancelAnimationFrame(canvasAnimFrame);
+            render();
+        }
+
+        // Draw animated abstract movie elements onto the canvas to simulate real ultra-high definition cinematic video playback
+        function drawAnimatedVideoFrame(ctx, canvas) {
+            const w = canvas.width;
+            const h = canvas.height;
+            const time = Date.now() * 0.001 * playerState.speed;
+
+            // Reset screen
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, w, h);
+
+            // Movie themed visuals
+            if (playerState.currentTrack) {
+                const track = playerState.currentTrack;
+                
+                if (track.id === 1) { 
+                    // Evangelion - red dramatic energetic neon abstract waves
+                    ctx.fillStyle = '#100000';
+                    ctx.fillRect(0, 0, w, h);
+                    
+                    // Render high fidelity lines
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i < 15; i++) {
+                        ctx.strokeStyle = `rgba(255, 40, 20, ${0.1 + (i*0.04)})`;
+                        ctx.beginPath();
+                        for (let x = 0; x <= w; x += 20) {
+                            const y = h/2 + Math.sin(x*0.01 + time + i*0.4) * 80 * Math.sin(time*0.5);
+                            if (x === 0) ctx.moveTo(x, y);
+                            else ctx.lineTo(x, y);
+                        }
+                        ctx.stroke();
+                    }
+                    // Cinematic branding watermark
+                    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText("EVANGELION BD-REMUX (4K HDR)", 20, 30);
+
+                } else if (track.id === 2) {
+                    // Your Name - magical blue/purple stars and meteor simulation
+                    ctx.fillStyle = '#050a1b';
+                    ctx.fillRect(0, 0, w, h);
+
+                    // Stars particles
+                    for (let i = 0; i < 35; i++) {
+                        const starX = (Math.sin(i * 324) * 0.5 + 0.5) * w;
+                        const starY = (Math.cos(i * 452) * 0.5 + 0.5) * h;
+                        const starSize = (Math.sin(time + i) * 0.5 + 0.5) * 2.5 + 0.5;
+                        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                        ctx.beginPath();
+                        ctx.arc(starX, starY, starSize, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // Meteor tail
+                    ctx.strokeStyle = 'rgba(0, 122, 255, 0.45)';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    const meteorStart = (time * 50) % (w + 200) - 100;
+                    ctx.moveTo(meteorStart, 50);
+                    ctx.lineTo(meteorStart - 120, 110);
+                    ctx.stroke();
+
+                    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText("君の名は。 ULTRA-HD 2160P", 20, 30);
+
+                } else if (track.id === 3) {
+                    // Spirited Away - green and yellow glowing spirits/waves
+                    ctx.fillStyle = '#020f06';
+                    ctx.fillRect(0, 0, w, h);
+
+                    // Flying gold spirits particles
+                    for (let i = 0; i < 20; i++) {
+                        const spiritX = (Math.sin(i * 77 + time * 0.2) * 0.5 + 0.5) * w;
+                        const spiritY = (Math.cos(i * 99 + time * 0.5) * 0.5 + 0.5) * h;
+                        ctx.fillStyle = `rgba(240, 210, 40, ${0.4 + Math.sin(time*1.5 + i)*0.3})`;
+                        ctx.beginPath();
+                        ctx.arc(spiritX, spiritY, 4 + Math.sin(time + i)*2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText("千と千尋の神隠し Remastered Audio", 20, 30);
+                }
+
+                // Render dynamic Audio EQ levels on playing
+                ctx.fillStyle = 'rgba(0, 122, 255, 0.65)';
+                for (let i = 0; i < 40; i++) {
+                    const barW = 3;
+                    const barH = 5 + Math.random() * 35 * playerState.volume;
+                    ctx.fillRect(w - 180 + i * 4, h - barH - 15, barW, barH);
+                }
+                
+                // Show active configurations
+                ctx.fillStyle = 'rgba(255,255,255,0.45)';
+                ctx.font = '10px sans-serif';
+                ctx.fillText(`音響: ${playerState.audioChannel}  |  速度: ${playerState.speed}x`, w - 180, 25);
+            }
+        }
+
+        function drawPausedVideoFrame(ctx, canvas) {
+            drawAnimatedVideoFrame(ctx, canvas);
+            // Draw visual transparent pause screen
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.fillText("一時停止中", canvas.width / 2 - 40, canvas.height / 2);
+        }
+
+        function drawIdleBrandingFrame(ctx, canvas) {
+            ctx.fillStyle = '#0c0d10';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // CONTROL HANDLERS FOR ANYMP4 BLUE-RAY PLAYER
+        function loadSampleMedia(id) {
+            const track = mediaLibrary.find(t => t.id === id);
+            if (!track) return;
+
+            playerState.currentTrack = track;
+            playerState.currentTime = 0;
+            playerState.duration = track.duration;
+
+            // Reset control indicators
+            document.getElementById('player-time-total').innerText = formatPlaybackTime(track.duration);
+            document.getElementById('player-time-current').innerText = "00:00:00";
+            document.getElementById('player-timeline').value = 0;
+            
+            // Show playing metadata
+            const overlay = document.getElementById('playing-track-overlay');
+            const trackTitle = document.getElementById('playing-track-title');
+            if (overlay && trackTitle) {
+                trackTitle.innerText = track.title;
+                overlay.style.opacity = '1';
+            }
+
+            // Hide main idle loader panel
+            const idleUI = document.getElementById('player-idle-ui');
+            if (idleUI) idleUI.style.opacity = '0';
+            setTimeout(() => { if (idleUI) idleUI.style.display = 'none'; }, 300);
+
+            // Execute Playback instantly
+            playerState.isPlaying = true;
+            document.getElementById('main-play-trigger').innerHTML = `<i class="fa-solid fa-pause"></i>`;
+            
+            // Audio synthesizer boot
+            playSynthTrack();
+
+            showToast(`『${track.title}』ブルーレイを読み込み、再生を開始しました。`);
+        }
+
+        function openMediaInAnyMP4(id) {
+            openApp('anymp4');
+            setTimeout(() => {
+                loadSampleMedia(id);
+            }, 350);
+        }
+
+        function toggleVideoPlayback() {
+            if (!playerState.currentTrack) {
+                // If nothing is loaded, trigger load sample media 1 by default
+                loadSampleMedia(1);
+                return;
+            }
+
+            playerState.isPlaying = !playerState.isPlaying;
+            const btn = document.getElementById('main-play-trigger');
+            if (playerState.isPlaying) {
+                btn.innerHTML = `<i class="fa-solid fa-pause"></i>`;
+                playSynthTrack();
+                showToast("再生を再開しました。");
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-play"></i>`;
+                stopSynthTrack();
+                showToast("一時停止しました。");
+            }
+        }
+
+        function stopVideoPlayback() {
+            playerState.isPlaying = false;
+            playerState.currentTime = 0;
+            stopSynthTrack();
+
+            document.getElementById('main-play-trigger').innerHTML = `<i class="fa-solid fa-play"></i>`;
+            document.getElementById('player-timeline').value = 0;
+            document.getElementById('player-time-current').innerText = "00:00:00";
+
+            // Restore idle player view
+            const idleUI = document.getElementById('player-idle-ui');
+            if (idleUI) {
+                idleUI.style.display = 'flex';
+                setTimeout(() => { idleUI.style.opacity = '1'; }, 10);
+            }
+            const overlay = document.getElementById('playing-track-overlay');
+            if (overlay) overlay.style.opacity = '0';
+
+            showToast("再生を停止しました。");
+        }
+
+        function updatePlaybackTime() {
+            if (!playerState.currentTrack) return;
+
+            playerState.currentTime += (1 * playerState.speed) / 60; // 60 FPS simulator tick
+            if (playerState.currentTime >= playerState.duration) {
+                playerState.currentTime = playerState.duration;
+                playerState.isPlaying = false;
+                stopSynthTrack();
+                document.getElementById('main-play-trigger').innerHTML = `<i class="fa-solid fa-play"></i>`;
+                showToast("再生が完了しました。");
+            }
+
+            const pct = (playerState.currentTime / playerState.duration) * 100;
+            document.getElementById('player-timeline').value = pct;
+            document.getElementById('player-time-current').innerText = formatPlaybackTime(playerState.currentTime);
+
+            // Trigger simulated subtitles
+            displaySimulatedSubtitles(playerState.currentTime);
+        }
+
+        function scrubVideo(pct) {
+            if (!playerState.currentTrack) return;
+            const newTime = (pct / 100) * playerState.duration;
+            playerState.currentTime = newTime;
+            document.getElementById('player-time-current').innerText = formatPlaybackTime(newTime);
+            
+            if (playerState.isPlaying) {
+                // Modulate synth speed frequency on scrubbing slightly
+                if (playerState.oscillator) {
+                    playerState.oscillator.frequency.setValueAtTime(140 * playerState.speed, playerState.audioContext.currentTime);
+                }
+            }
+        }
+
+        function displaySimulatedSubtitles(secs) {
+            const sub = document.getElementById('subtitle-overlay');
+            if (playerState.subtitle === 'None') {
+                sub.classList.add('hidden');
+                return;
+            }
+
+            sub.classList.remove('hidden');
+            
+            // Multi-tier timeline movie subtitles script mock
+            const cycle = Math.floor(secs) % 20;
+            let subText = "";
+            
+            if (playerState.subtitle === '日本語 (字幕)') {
+                if (cycle >= 0 && cycle < 4) subText = "「あの日の出来事は、まるで夢のようだった」";
+                else if (cycle >= 4 && cycle < 8) subText = "「私たちは、いつかもう一度出会うことができるのだろうか？」";
+                else if (cycle >= 8 && cycle < 12) subText = "「失われた記憶を探し求めて、時を越える旅に出る」";
+                else if (cycle >= 12 && cycle < 16) subText = "「AnyMP4 の極上ハイレゾ音響が、シーンの臨場感を何倍にも引き立てる」";
+                else subText = "（バックグラウンドに広がる美しいストリングス音楽）";
+            } else { // English
+                if (cycle >= 0 && cycle < 4) subText = "“Everything that happened that day was like a beautiful dream.”";
+                else if (cycle >= 4 && cycle < 8) subText = "“I wonder if we will ever be able to meet each other again?”";
+                else if (cycle >= 8 && cycle < 12) subText = "“Embarking on a timeless journey, searching for lost memories.”";
+                else if (cycle >= 12 && cycle < 16) subText = "“AnyMP4’s lossless surround audio elevates every frame to perfection.”";
+                else subText = "(Dramatic orchestral strings playing in background)";
+            }
+            sub.innerText = subText;
+        }
+
+        function setPlayerSpeed(sp) {
+            playerState.speed = sp;
+            document.getElementById('player-speed-btn').innerText = sp + "x";
+            if (playerState.isPlaying && playerState.oscillator) {
+                // Pitch shift sound synth based on playback speed
+                playerState.oscillator.frequency.setValueAtTime(110 * sp, playerState.audioContext.currentTime);
+            }
+            showToast(`再生速度を ${sp}倍 に変更しました。`);
+        }
+
+        function setAudioChannel(ch) {
+            playerState.audioChannel = ch;
+            document.getElementById('player-audio-btn').innerText = "音声: " + ch;
+            if (playerState.isPlaying) {
+                // Re-trigger audio synth block with slight pitch variance to simulate atmospheric change
+                playSynthTrack();
+            }
+            showToast(`音声トラックを [${ch}] に設定しました。`);
+        }
+
+        function setSubtitle(sub) {
+            playerState.subtitle = sub;
+            document.getElementById('player-sub-btn').innerText = sub === 'None' ? '字幕: オフ' : '字幕: ON';
+            showToast(`字幕設定を [${sub}] に変更しました。`);
+        }
+
+        function adjustPlayerVolume(val) {
+            playerState.volume = val / 100;
+            if (playerState.gainNode) {
+                playerState.gainNode.gain.setValueAtTime(playerState.volume * 0.15, playerState.audioContext.currentTime);
+            }
+            const icon = document.getElementById('player-volume-icon');
+            if (val == 0) {
+                icon.innerHTML = `<i class="fa-solid fa-volume-mute"></i>`;
+            } else if (val < 50) {
+                icon.innerHTML = `<i class="fa-solid fa-volume-low"></i>`;
+            } else {
+                icon.innerHTML = `<i class="fa-solid fa-volume-high"></i>`;
+            }
+        }
+
+        function muteToggle() {
+            const volSlider = document.getElementById('player-vol-scrub');
+            if (playerState.volume > 0) {
+                volSlider.value = 0;
+                adjustPlayerVolume(0);
+                showToast("消音にしました。");
+            } else {
+                volSlider.value = 80;
+                adjustPlayerVolume(80);
+                showToast("音量を戻しました。");
+            }
+        }
+
+        function toggleVideoFullscreen() {
+            const win = openWindows['anymp4'];
+            if (!win) return;
+            maximizeApp('anymp4');
+            showToast("フルスクリーン表示モードをトグルしました。");
+        }
+
+        function playNextTrack() {
+            if (!playerState.currentTrack) return;
+            let currentId = playerState.currentTrack.id;
+            let nextId = currentId + 1;
+            if (nextId > mediaLibrary.length) nextId = 1;
+            loadSampleMedia(nextId);
+        }
+
+        function playPrevTrack() {
+            if (!playerState.currentTrack) return;
+            let currentId = playerState.currentTrack.id;
+            let prevId = currentId - 1;
+            if (prevId < 1) prevId = mediaLibrary.length;
+            loadSampleMedia(prevId);
+        }
+
+        function togglePlaylist() {
+            playerState.playlistOpen = !playerState.playlistOpen;
+            const drawer = document.getElementById('playlist-drawer');
+            if (drawer) {
+                if (playerState.playlistOpen) {
+                    drawer.classList.remove('translate-x-full');
+                } else {
+                    drawer.classList.add('translate-x-full');
+                }
+            }
+        }
+
+        function triggerFileBrowser() {
+            openApp('finder');
+            showToast("任意のBlu-ray .ISO または .mp4 ファイルをダブルクリックして再生してください。");
+        }
+
+        function triggerDiscLoader() {
+            loadSampleMedia(1); // Load Evangelion by default
+        }
+
+        function formatPlaybackTime(secs) {
+            const h = Math.floor(secs / 3600);
+            const m = Math.floor((secs % 3600) / 60);
+            const s = Math.floor(secs % 60);
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+
+        // NOTES APP INTERACTION
+        function populateNotesList() {
+            const container = document.getElementById('notes-list-holder');
+            if (!container) return;
+            container.innerHTML = "";
+
+            savedNotes.forEach((note, index) => {
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left p-2.5 rounded-lg transition text-xs ${selectedNoteIndex === index ? 'bg-orange-500 bg-opacity-30 border border-orange-500 border-opacity-40' : 'hover:bg-white hover:bg-opacity-5'}`;
+                btn.onclick = () => selectNote(index);
+                btn.innerHTML = `
+                    <div class="font-bold text-gray-200 truncate">${note.title || '無題のメモ'}</div>
+                    <div class="text-[9px] text-gray-500 truncate mt-0.5">${note.content.substring(0, 30)}...</div>
+                `;
+                container.appendChild(btn);
+            });
+
+            // Update editor content with selected notes
+            const activeNote = savedNotes[selectedNoteIndex];
+            if (activeNote) {
+                document.getElementById('editor-title').value = activeNote.title;
+                document.getElementById('editor-body').value = activeNote.content;
+            } else {
+                document.getElementById('editor-title').value = "";
+                document.getElementById('editor-body').value = "";
+            }
+        }
+
+        function selectNote(index) {
+            selectedNoteIndex = index;
+            populateNotesList();
+        }
+
+        function createNewNote() {
+            savedNotes.unshift({ title: "新しいメモ", content: "入力してください..." });
+            selectedNoteIndex = 0;
+            populateNotesList();
+            showToast("新規メモを作成しました。");
+        }
+
+        function saveCurrentNoteText() {
+            const note = savedNotes[selectedNoteIndex];
+            if (!note) return;
+            note.title = document.getElementById('editor-title').value;
+            note.content = document.getElementById('editor-body').value;
+            
+            // Re-populate list without losing focus
+            const container = document.getElementById('notes-list-holder');
+            const btns = container.querySelectorAll('button');
+            if (btns[selectedNoteIndex]) {
+                btns[selectedNoteIndex].querySelector('div').innerText = note.title || '無題のメモ';
+                btns[selectedNoteIndex].querySelectorAll('div')[1].innerText = note.content.substring(0, 30) + "...";
+            }
+        }
+
+        function deleteCurrentNote() {
+            if (savedNotes.length <= 1) {
+                showToast("少なくとも1つのメモを残す必要があります。");
+                return;
+            }
+            savedNotes.splice(selectedNoteIndex, 1);
+            selectedNoteIndex = 0;
+            populateNotesList();
+            showToast("メモを削除しました。");
+        }
+
+
+        // SYSTEM SETTINGS APP INTERACTION
+        function switchSettingsTab(tab) {
+            const container = document.getElementById('settings-tab-content');
+            if (!container) return;
+
+            if (tab === 'general') {
+                container.innerHTML = `
+                    <h2 class="text-base font-bold text-white border-b border-white border-opacity-10 pb-2 flex items-center space-x-2">
+                        <i class="fa-solid fa-laptop text-blue-400"></i>
+                        <span>一般システム仕様情報</span>
+                    </h2>
+                    <div class="space-y-4 pt-2">
+                        <div class="flex items-center space-x-4 bg-white bg-opacity-5 p-4 rounded-xl border border-white border-opacity-5">
+                            <i class="fa-brands fa-apple text-5xl text-white"></i>
+                            <div>
+                                <h3 class="text-sm font-bold">macOS Sequoia</h3>
+                                <p class="text-[10px] text-gray-400">プロセッサー: Apple Silicon M3 Max 極限デコード対応</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2.5">
+                            <div class="flex justify-between border-b border-white border-opacity-5 pb-1.5"><span class="text-gray-400">チップモデル:</span><span class="font-semibold">M3 Max (16-core CPU, 40-core GPU)</span></div>
+                            <div class="flex justify-between border-b border-white border-opacity-5 pb-1.5"><span class="text-gray-400">システムRAM容量:</span><span class="font-semibold">24 GB 高速ユニファイドメモリ</span></div>
+                            <div class="flex justify-between border-b border-white border-opacity-5 pb-1.5"><span class="text-gray-400">内蔵ディスクストレージ:</span><span class="font-semibold">1 TB SSD (842 GB 空き)</span></div>
+                            <div class="flex justify-between border-b border-white border-opacity-5 pb-1.5"><span class="text-gray-400">ブルーレイ・デコーダー:</span><span class="font-semibold text-green-400">AnyMP4 4K 加速対応</span></div>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === 'wallpaper') {
+                container.innerHTML = `
+                    <h2 class="text-base font-bold text-white border-b border-white border-opacity-10 pb-2 flex items-center space-x-2">
+                        <i class="fa-solid fa-image text-purple-400"></i>
+                        <span>デスクトップ壁紙のカスタマイズ</span>
+                    </h2>
+                    <p class="text-[10px] text-gray-400">お好みの美しい高精細画像をクリックして背景を変更できます：</p>
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <div onclick="changeWallpaper('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80')" class="cursor-pointer border border-transparent hover:border-blue-500 rounded-lg overflow-hidden transition transform active:scale-95">
+                            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80" class="h-20 w-full object-cover">
+                            <div class="p-1 bg-[#252528] text-[9px] text-center font-bold">Sequoia アート (ダーク)</div>
+                        </div>
+                        <div onclick="changeWallpaper('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=800&q=80')" class="cursor-pointer border border-transparent hover:border-blue-500 rounded-lg overflow-hidden transition transform active:scale-95">
+                            <img src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=300&q=80" class="h-20 w-full object-cover">
+                            <div class="p-1 bg-[#252528] text-[9px] text-center font-bold">Sonoma グラデーション (ライト)</div>
+                        </div>
+                        <div onclick="changeWallpaper('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80')" class="cursor-pointer border border-transparent hover:border-blue-500 rounded-lg overflow-hidden transition transform active:scale-95">
+                            <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=300&q=80" class="h-20 w-full object-cover">
+                            <div class="p-1 bg-[#252528] text-[9px] text-center font-bold">スペース・サイバー</div>
+                        </div>
+                        <div onclick="changeWallpaper('https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?auto=format&fit=crop&w=800&q=80')" class="cursor-pointer border border-transparent hover:border-blue-500 rounded-lg overflow-hidden transition transform active:scale-95">
+                            <img src="https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?auto=format&fit=crop&w=300&q=80" class="h-20 w-full object-cover">
+                            <div class="p-1 bg-[#252528] text-[9px] text-center font-bold">ナチュラルサンセット</div>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === 'display') {
+                container.innerHTML = `
+                    <h2 class="text-base font-bold text-white border-b border-white border-opacity-10 pb-2 flex items-center space-x-2">
+                        <i class="fa-solid fa-desktop text-green-400"></i>
+                        <span>ディスプレイ & サウンド調整</span>
+                    </h2>
+                    <div class="space-y-5 pt-2">
+                        <div class="space-y-2">
+                            <label class="text-[10px] text-gray-400 font-bold uppercase block">ディスプレイ輝度</label>
+                            <div class="flex items-center space-x-3">
+                                <i class="fa-solid fa-sun text-gray-400"></i>
+                                <input type="range" min="30" max="100" value="${systemBrightness}" oninput="changeBrightness(this.value); this.nextElementSibling.innerText = this.value + '%'" class="flex-grow accent-blue-500 h-1 bg-gray-800 rounded-lg cursor-pointer">
+                                <span class="w-8 font-semibold text-right">${systemBrightness}%</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[10px] text-gray-400 font-bold uppercase block">システム全体音量</label>
+                            <div class="flex items-center space-x-3">
+                                <i class="fa-solid fa-volume-high text-gray-400"></i>
+                                <input type="range" min="0" max="100" value="${systemVolume}" oninput="changeSystemVolume(this.value); this.nextElementSibling.innerText = this.value + '%'" class="flex-grow accent-blue-500 h-1 bg-gray-800 rounded-lg cursor-pointer">
+                                <span class="w-8 font-semibold text-right">${systemVolume}%</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-[#2c2c2e] rounded-xl border border-white border-opacity-5 space-y-1">
+                            <h4 class="font-bold text-blue-400">音響空間効果: 5.1ch Surround</h4>
+                            <p class="text-[9px] text-gray-400 leading-relaxed">
+                                AnyMP4 Blu-ray Player のサラウンドテクノロジーは、接続されている外部スピーカーやヘッドフォンに完全に対応しています。
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Catch app launches to trigger initialization configs where needed
+        const originalOpenApp = openApp;
+        openApp = function(appKey) {
+            originalOpenApp(appKey);
+            
+            // Post initialization setups
+            if (appKey === 'notes') {
+                populateNotesList();
+            } else if (appKey === 'settings') {
+                switchSettingsTab('general');
+            }
+        }
+    </script>
+</body>
+</html>
