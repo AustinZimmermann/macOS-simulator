@@ -1,0 +1,195 @@
+:root {
+    --mac-bg: #2c3e50;
+    --window-bg: #1e1e1e;
+    --title-bg: #3c3c3c;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
+}
+
+body {
+    background: radial-gradient(circle, #34495e 0%, #1a252f 100%);
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Menu Bar */
+.menu-bar {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: #fff;
+    height: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    font-size: 13px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 9999;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-left, .menu-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.menu-item {
+    cursor: default;
+}
+
+.menu-item.bold {
+    font-weight: 700;
+}
+
+/* Desktop */
+.desktop {
+    padding-top: 24px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* macOS Window */
+.window {
+    width: 800px;
+    background: var(--window-bg);
+    border-radius: 10px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.window-header {
+    background: var(--title-bg);
+    height: 30px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 0 10px;
+    border-bottom: 1px solid #121212;
+}
+
+.window-controls {
+    display: flex;
+    gap: 8px;
+    position: absolute;
+    z-index: 10;
+}
+
+.control {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+
+.close { background-color: #ff5f56; }
+.minimize { background-color: #ffbd2e; }
+.maximize { background-color: #27c93f; }
+
+.window-title {
+    width: 100%;
+    text-align: center;
+    color: #ccfaec;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Game Framework & 4:3 Pillarbox */
+.window-content {
+    background-color: #000; /* Black bars / pillarbox background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.game-container {
+    width: 100%;
+    max-width: 720px; /* Forces 4:3 aspect ratio bound within window wide constraints */
+    aspect-ratio: 4 / 3;
+    background-color: #000;
+    position: relative;
+}
+
+/* Mock F-ZERO GX Canvas Game Interface */
+.game-screen {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #050014 0%, #190033 50%, #4a004a 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Retro F-ZERO GX Styled Title */
+.fzero-logo {
+    font-size: 54px;
+    font-weight: 900;
+    font-style: italic;
+    color: #fff;
+    text-shadow: 
+        0 0 10px #ff0055, 
+        3px 3px 0px #00ffff, 
+        -3px -3px 0px #ff0055;
+    letter-spacing: 4px;
+    transform: skewX(-10deg);
+    animation: glow 1.5s ease-in-out infinite alternate;
+}
+
+.press-start {
+    margin-top: 40px;
+    font-size: 16px;
+    color: #00ffff;
+    font-weight: bold;
+    text-shadow: 0 0 8px #00ffff;
+    letter-spacing: 2px;
+    animation: blink 0.8s infinite steps(2, start);
+}
+
+.game-footer {
+    position: absolute;
+    bottom: 15px;
+    color: #888;
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+/* Status Bar */
+.window-status {
+    background-color: #2b2b2b;
+    color: #aaa;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-top: 1px solid #1a1a1a;
+    text-align: right;
+}
+
+/* Animations */
+@keyframes blink {
+    to { visibility: hidden; }
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 10px #ff0055, 3px 3px 0px #00ffff, -3px -3px 0px #ff0055; }
+    to { text-shadow: 0 0 20px #ff0055, 4px 4px 5px #00ffff, -4px -4px 5px #ff0055; }
+}
