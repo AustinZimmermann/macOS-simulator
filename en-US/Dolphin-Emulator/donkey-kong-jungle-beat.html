@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Simulator - Dolphin Emulator</title>
+    <style>
+        :root {
+            --bg-url: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            background: var(--bg-url) center/cover no-repeat;
+        }
+
+        /* Menu Bar */
+        .menu-bar {
+            height: 24px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 500;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            box-shadow: 0 1px 0px rgba(0,0,0,0.15);
+        }
+
+        .menu-left, .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .apple-icon {
+            font-size: 16px;
+        }
+
+        /* Desktop Area */
+        .desktop {
+            width: 100%;
+            height: 100%;
+            padding-top: 24px;
+            position: relative;
+        }
+
+        .desktop-item {
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            text-align: center;
+        }
+
+        .desktop-item img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .desktop-item span {
+            color: white;
+            font-size: 12px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            font-weight: 500;
+            background: rgba(0,0,0,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Window Styling */
+        .window {
+            width: 800px;
+            height: 550px;
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            position: absolute;
+            top: 15%;
+            left: 25%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 100;
+            transform: scale(0.95);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+        }
+
+        .window.open {
+            transform: scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .window-header {
+            height: 40px;
+            background: #2d2d2d;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            border-bottom: 1px solid #121212;
+            cursor: move;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-close { background: #ff5f56; }
+        .btn-minimize { background: #ffbd2e; }
+        .btn-maximize { background: #27c93f; }
+
+        .window-title {
+            color: #bcbcbc;
+            font-size: 13px;
+            font-weight: 400;
+        }
+
+        /* Emulator Interface */
+        .emulator-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .toolbar {
+            height: 48px;
+            background: #252526;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 16px;
+            border-bottom: 1px solid #121212;
+        }
+
+        .tool-btn {
+            background: transparent;
+            border: none;
+            color: #cccccc;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tool-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .game-canvas-container {
+            flex: 1;
+            position: relative;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Simulated Game Render */
+        .game-screen {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+        }
+
+        .game-screen.playing {
+            display: flex;
+        }
+
+        .game-title-banner {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+            margin-bottom: 10px;
+        }
+
+        .game-meta {
+            font-size: 14px;
+            color: #a0a0a0;
+            margin-bottom: 20px;
+        }
+
+        .gameplay-loop {
+            width: 80%;
+            max-width: 500px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .status-log {
+            font-size: 12px;
+            color: #00ff00;
+            text-align: left;
+            height: 100px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .placeholder-art {
+            font-size: 48px;
+            margin: 15px 0;
+            animation: bounce 0.6s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+
+        /* Dock */
+        .dock-container {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            padding: 8px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 9999;
+        }
+
+        .dock {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            height: 50px;
+        }
+
+        .dock-item {
+            width: 48px;
+            height: 48px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            transform-origin: bottom;
+        }
+
+        .dock-item:hover {
+            transform: scale(1.2);
+            margin: 0 10px;
+        }
+
+        .dock-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Dolphin Emulator (Simulated macOS Environment)",
+      "operatingSystem": "macOS",
+      "applicationCategory": "GameApplication",
+      "browserRequirements": "Requires HTML5 canvas, JavaScript, and CSS Grid/Flexbox capabilities.",
+      "softwareVersion": "Beta-Sim-1.0",
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "USD"
+      },
+      "targetProduct": {
+        "@type": "SoftwareApplication",
+        "name": "Donkey Kong Jungle Beat",
+        "inLanguage": "en-US",
+        "gamePlatform": "Nintendo GameCube"
+      }
+    }
+    </script>
+</head>
+<body>
+
+    <div class="menu-bar">
+        <div class="menu-left">
+            <span class="apple-icon"></span>
+            <span style="font-weight: 700;">Dolphin</span>
+            <span>File</span>
+            <span>Edit</span>
+            <span>Config</span>
+            <span>Graphics</span>
+            <span>Controllers</span>
+            <span>Help</span>
+        </div>
+        <div class="menu-right">
+            <span>🇺🇸 USA</span>
+            <span id="clock">1:23 PM</span>
+        </div>
+    </div>
+
+    <div class="desktop">
+        <div class="desktop-item" onclick="openEmulator()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Dolphin-logo.svg/1280px-Dolphin-logo.svg.png" alt="Dolphin Emulator">
+            <span>Dolphin</span>
+        </div>
+
+        <div class="window" id="dolphinWindow">
+            <div class="window-header" id="windowHeader">
+                <div class="window-controls">
+                    <button class="control-btn btn-close" onclick="closeEmulator()"></button>
+                    <button class="control-btn btn-minimize" onclick="closeEmulator()"></button>
+                    <button class="control-btn btn-maximize"></button>
+                </div>
+                <div class="window-title">Dolphin Emulator | Core: JIT64 v5.0 | Locale: en_US</div>
+                <div style="width: 50px;"></div> </div>
+            
+            <div class="emulator-body">
+                <div class="toolbar">
+                    <button class="tool-btn" id="playBtn" onclick="bootGame()">
+                        <span style="color:#27c93f;">▶</span> Open ISO
+                    </button>
+                    <button class="tool-btn" onclick="stopGame()" id="stopBtn" disabled style="opacity:0.5;">
+                        <span style="color:#ff5f56;">■</span> Stop
+                    </button>
+                    <button class="tool-btn">🛠 Config</button>
+                    <button class="tool-btn">🎮 Controllers</button>
+                </div>
+
+                <div class="game-canvas-container">
+                    <div id="noRomText" style="color: #666; font-size: 14px;">No ISO loaded. Click “Open ISO” to boot Donkey Kong Jungle Beat.</div>
+                    
+                    <div class="game-screen" id="gameScreen">
+                        <div class="game-title-banner">DONKEY KONG JUNGLE BEAT</div>
+                        <div class="game-meta">Region: NTSC-U | Locale: American English (en-US) | FPS: 60/60</div>
+                        
+                        <div class="placeholder-art">🦍🥁</div>
+                        
+                        <div class="gameplay-loop">
+                            <div class="status-log" id="statusLog">Initializing GameCube Subsystem...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dock-container">
+        <div class="dock">
+            <div class="dock-item" onclick="openEmulator()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Dolphin-logo.svg/1280px-Dolphin-logo.svg.png" alt="Dolphin Logo">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Clock functionality
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; 
+            document.getElementById('clock').textContent = `${hours}:${minutes} ${ampm}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Window Manipulation / Dragging
+        const win = document.getElementById('dolphinWindow');
+        const header = document.getElementById('windowHeader');
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        header.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - win.offsetLeft;
+            offsetY = e.clientY - win.offsetTop;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            win.style.left = `${e.clientX - offsetX}px`;
+            win.style.top = `${e.clientY - offsetY}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        function openEmulator() {
+            win.classList.add('open');
+        }
+
+        function closeEmulator() {
+            stopGame();
+            win.classList.remove('open');
+        }
+
+        // Simulated Dolphin Engine State
+        let gameInterval;
+        const logs = [
+            "[IOS] Loading Game ISO: Donkey Kong Jungle Beat (USA)...",
+            "[IPL] Booting GameCube IPL (NTSC-U)...",
+            "[IPL] Setting System Language to: English (US)",
+            "[DVD] DVD Magic Word read successfully.",
+            "[FIFO] Initializing GX graphics pipeline...",
+            "[AUDIO] Streaming DK Jungle Beat Title Soundtrack...",
+            "[PAD] Mapping Bongo Controllers to Keyboard Keys...",
+            "[GAME] Gameplay Started! Ready Player 1 (Donkey Kong)."
+        ];
+
+        function bootGame() {
+            document.getElementById('noRomText').style.display = 'none';
+            document.getElementById('gameScreen').classList.add('playing');
+            document.getElementById('playBtn').disabled = true;
+            document.getElementById('playBtn').style.opacity = 0.5;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('stopBtn').style.opacity = 1;
+
+            const logElement = document.getElementById('statusLog');
+            logElement.textContent = "";
+            let logIndex = 0;
+
+            // Simple loop emulator routine output
+            gameInterval = setInterval(() => {
+                if (logIndex < logs.length) {
+                    logElement.textContent += logs[logIndex] + "\n";
+                    logElement.scrollTop = logElement.scrollHeight;
+                    logIndex++;
+                } else {
+                    // Simulating actual live loop data strings
+                    const score = Math.floor(Math.random() * 100) + 10;
+                    const beatCombo = Math.floor(Math.random() * 5) + 1;
+                    logElement.innerHTML += `<span style="color:#ffcc00;">[RUNNING] Clapped! Combo x${beatCombo} | Bananas Collected: ${score}</span>\n`;
+                    logElement.scrollTop = logElement.scrollHeight;
+                }
+            }, 800);
+        }
+
+        function stopGame() {
+            clearInterval(gameInterval);
+            document.getElementById('noRomText').style.display = 'block';
+            document.getElementById('gameScreen').classList.remove('playing');
+            document.getElementById('playBtn').disabled = false;
+            document.getElementById('playBtn').style.opacity = 1;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('stopBtn').style.opacity = 0.5;
+            document.getElementById('statusLog').textContent = "Emulator idle.";
+        }
+    </script>
+</body>
+</html>
