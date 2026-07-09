@@ -3,368 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>macOS Simulator (日本語版)</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-
-        body, html {
-            width: 100%;
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans CJK JP", sans-serif;
-            overflow: hidden;
-            background: linear-gradient(135deg, #ea580c, #7c3aed, #2563eb);
-            background-size: cover;
-        }
-
-        /* --- メニューバー (Menu Bar) --- */
-        .menu-bar {
-            height: 24px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 15px;
-            color: #ffffff;
-            font-size: 13px;
-            font-weight: 500;
-            position: absolute;
-            top: 0;
-            width: 100%;
-            z-index: 9999;
-            box-shadow: 0 1px 10px rgba(0,0,0,0.1);
-        }
-
-        .menu-left, .menu-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .menu-item {
-            cursor: pointer;
-        }
-
-        .menu-item:hover {
-            opacity: 0.7;
-        }
-
-        .apple-logo {
-            font-size: 16px;
-        }
-
-        /* --- デスクトップ領域 (Desktop Area) --- */
-        .desktop {
-            width: 100%;
-            height: calc(100% - 24px);
-            position: absolute;
-            top: 24px;
-            left: 0;
-        }
-
-        /* --- ウインドウ (Window) --- */
-        .window {
-            width: 500px;
-            height: 350px;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            position: absolute;
-            top: 15%;
-            left: 25%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border: 0.5px solid rgba(255, 255, 255, 0.3);
-            transform: scale(0);
-            transition: transform 0.2s cubic-bezier(0.1, 0.8, 0.3, 1);
-            z-index: 100;
-        }
-
-        .window.open {
-            transform: scale(1);
-        }
-
-        .window-header {
-            height: 40px;
-            background: rgba(240, 240, 240, 0.6);
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            position: relative;
-            cursor: move;
-            border-bottom: 0.5px solid rgba(0,0,0,0.1);
-        }
-
-        .window-buttons {
-            display: flex;
-            gap: 8px;
-            position: absolute;
-            left: 15px;
-        }
-
-        .win-btn {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        .btn-close { background-color: #ff5f56; }
-        .btn-minimize { background-color: #ffbd2e; }
-        .btn-maximize { background-color: #27c93f; }
-
-        .window-title {
-            margin: 0 auto;
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .window-content {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            color: #222;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        textarea {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: transparent;
-            resize: none;
-            font-size: 15px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        /* --- ドック (Dock) --- */
-        .dock-container {
-            position: absolute;
-            bottom: 10px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            z-index: 9998;
-        }
-
-        .dock {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            padding: 8px;
-            border-radius: 20px;
-            display: flex;
-            align-items: flex-end;
-            gap: 12px;
-            border: 0.5px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-
-        .dock-item {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.2s ease, margin 0.2s ease;
-            position: relative;
-            font-size: 28px;
-        }
-
-        .dock-item:hover {
-            transform: scale(1.2) translateY(-10px);
-            margin: 0 5px;
-        }
-
-        /* アプリごとのカラー (簡易アイコン) */
-        .finder { background: linear-gradient(#54a3ff, #0066ff); }
-        .safari { background: linear-gradient(#ffffff, #e0e0e0); }
-        .notes { background: linear-gradient(#fcd34d, #f59e0b); }
-        .trash { background: rgba(255,255,255,0.4); font-size: 24px; }
-
-        /* アクティブインジケータ */
-        .dock-item::after {
-            content: '';
-            position: absolute;
-            bottom: -6px;
-            width: 4px;
-            height: 4px;
-            background-color: rgba(255,255,255,0.8);
-            border-radius: 50%;
-            display: none;
-        }
-        .dock-item.active::after {
-            display: block;
-        }
-    </style>
+    <title>macOS Simulator</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="menu-bar">
-        <div class="menu-left">
-            <span class="menu-item apple-logo"></span>
-            <span class="menu-item" style="font-weight: 700;">Finder</span>
-            <span class="menu-item">ファイル</span>
-            <span class="menu-item">編集</span>
-            <span class="menu-item">表示</span>
-            <span class="menu-item">移動</span>
-            <span class="menu-item">ウィンドウ</span>
-            <span class="menu-item">ヘルプ</span>
+    <header class="menu-bar">
+        <div class="left-menu">
+            <span class="apple-icon"></span>
+            <span class="bold">Finder</span>
+            <span>ファイル</span>
+            <span>編集</span>
+            <span>表示</span>
+            <span>移動</span>
+            <span>ウィンドウ</span>
+            <span>ヘルプ</span>
         </div>
-        <div class="menu-right">
-            <span class="menu-item">A</span>
-            <span class="menu-item" id="battery">98%</span>
-            <span class="menu-item" id="clock">7月8日(水) 18:47</span>
+        <div class="right-menu">
+            <span id="battery">🔋 100%</span>
+            <span id="wifi">📶</span>
+            <span id="clock">00:00</span>
         </div>
-    </div>
+    </header>
 
-    <div class="desktop" id="desktop">
-
-        <div class="window" id="notes-window">
-            <div class="window-header" id="window-header">
-                <div class="window-buttons">
-                    <div class="win-btn btn-close" onclick="closeWindow('notes-window', 'notes-icon')"></div>
-                    <div class="win-btn btn-minimize"></div>
-                    <div class="win-btn btn-maximize"></div>
+    <main class="desktop">
+        <div class="window" id="finder-window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <span class="control close" id="close-btn"></span>
+                    <span class="control minimize"></span>
+                    <span class="control maximize"></span>
                 </div>
-                <div class="window-title">メモ</div>
+                <div class="window-title">Finder</div>
             </div>
-            <div class="window-content">
-                <textarea placeholder="ここにメモを入力してください..."></textarea>
-            </div>
-        </div>
-
-        <div class="window" id="safari-window">
-            <div class="window-header" id="safari-header">
-                <div class="window-buttons">
-                    <div class="win-btn btn-close" onclick="closeWindow('safari-window', 'safari-icon')"></div>
-                    <div class="win-btn btn-minimize"></div>
-                    <div class="win-btn btn-maximize"></div>
-                </div>
-                <div class="window-title">Safari</div>
-            </div>
-            <div class="window-content" style="padding: 0;">
-                <div style="background: #e5e7eb; padding: 6px 12px; display: flex; gap: 10px; align-items: center;">
-                    <div style="background: white; border-radius: 4px; flex: 1; padding: 4px 10px; font-size: 12px; color: #666;">https://www.apple.com/jp/</div>
-                </div>
-                <div style="padding: 20px; text-align: center;">
-                    <h3>Apple 日本へようこそ</h3>
-                    <p style="margin-top: 10px; color: #555;">これはmacOSシミュレータ内のモックブラウザです。</p>
-                </div>
+            <div class="window-body">
+                <aside class="sidebar">
+                    <h3>よく使う項目</h3>
+                    <ul>
+                        <li class="active" id="nav-recents">最近の項目</li>
+                        <li id="nav-documents">書類</li>
+                        <li id="nav-downloads">ダウンロード</li>
+                    </ul>
+                </aside>
+                <section class="content" id="finder-content">
+                    </section>
             </div>
         </div>
+    </main>
 
-    </div>
-
-    <div class="dock-container">
+    <nav class="dock-container">
         <div class="dock">
-            <div class="dock-item finder" title="Finder"> Finder </div>
-            <div class="dock-item safari" id="safari-icon" title="Safari" onclick="openWindow('safari-window', 'safari-icon')">🌐</div>
-            <div class="dock-item notes" id="notes-icon" title="メモ" onclick="openWindow('notes-window', 'notes-icon')">📝</div>
-            <div class="dock-item trash" title="ゴミ箱">🗑️</div>
+            <div class="dock-item" id="dock-finder" title="Finder">
+                <img src="https://img.icons8.com/color/96/mac-os.png" alt="Finder">
+                <div class="dot"></div>
+            </div>
+            <div class="dock-item" title="Safari">
+                <img src="https://img.icons8.com/color/96/safari.png" alt="Safari">
+            </div>
+            <div class="dock-item" title=" there is no App Store ">
+                <img src="https://img.icons8.com/color/96/apple-app-store.png" alt="App Store">
+            </div>
+            <div class="dock-item" title="システム設定">
+                <img src="https://img.icons8.com/color/96/mac-os-preferences.png" alt="Settings">
+            </div>
         </div>
-    </div>
+    </nav>
 
-    <script>
-        // リアルタイム時計の更新機能
-        function updateClock() {
-            const now = new Date();
-            const months = now.getMonth() + 1;
-            const date = now.getDate();
-            const days = ['日', '月', '火', '水', '木', '金', '土'];
-            const day = days[now.getDay()];
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            
-            document.getElementById('clock').textContent = `${months}月${date}日(${day}) ${hours}:${minutes}`;
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        // ウインドウを開く
-        function openWindow(windowId, iconId) {
-            const win = document.getElementById(windowId);
-            const icon = document.getElementById(iconId);
-            win.classList.add('open');
-            icon.classList.add('active');
-            
-            // 開いたときに最前面に持ってくる
-            bringToFront(win);
-        }
-
-        // ウインドウを閉じる
-        function closeWindow(windowId, iconId) {
-            const win = document.getElementById(windowId);
-            const icon = document.getElementById(iconId);
-            win.classList.remove('open');
-            icon.classList.remove('active');
-        }
-
-        // 最前面表示の切り替え
-        let topZIndex = 100;
-        function bringToFront(windowElement) {
-            topZIndex++;
-            windowElement.style.zIndex = topZIndex;
-        }
-
-        // ドラッグ＆ドロップ機能の実装
-        function makeDraggable(windowId, headerId) {
-            const win = document.getElementById(windowId);
-            const header = document.getElementById(headerId);
-            
-            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-
-            header.onmousedown = dragMouseDown;
-
-            function dragMouseDown(e) {
-                e = e || window.event;
-                e.preventDefault();
-                bringToFront(win);
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
-            }
-
-            function elementDrag(e) {
-                e = e || window.event;
-                e.preventDefault();
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                
-                // バウンダリ制限なしの簡易位置設定
-                win.style.top = (win.offsetTop - pos2) + "px";
-                win.style.left = (win.offsetLeft - pos1) + "px";
-            }
-
-            function closeDragElement() {
-                document.onmouseup = null;
-                document.onmousemove = null;
-            }
-
-            // クリック時にも最前面へ
-            win.addEventListener('mousedown', () => bringToFront(win));
-        }
-
-        // 各ウインドウにドラッグ機能を適用
-        makeDraggable('notes-window', 'window-header');
-        makeDraggable('safari-window', 'safari-header');
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>

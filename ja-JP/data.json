@@ -1,0 +1,15 @@
+{
+  "recents": [
+    { "name": "履歴書.pages", "type": "text" },
+    { "name": "スクリーンショット.png", "type": "image" }
+  ],
+  "documents": [
+    { "name": "プロジェクト計画", "type": "folder" },
+    { "name": "履歴書.pages", "type": "text" },
+    { "name": "予算シート.numbers", "type": "text" }
+  ],
+  "downloads": [
+    { "name": "Xcode_Beta.dmg", "type": "file" },
+    { "name": "スクリーンショット.png", "type": "image" }
+  ]
+}
