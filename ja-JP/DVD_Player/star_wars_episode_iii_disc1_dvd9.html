@@ -3,49 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>macOS DVD Player - Star Wars: Episode III</title>
+    <title>macOS Panther - DVDプレーヤー</title>
     <style>
         :root {
-            --mac-bg: #2c5d88;
+            --aqua-blue: #3875d7;
+            --mac-gray: #e0e0e0;
             --window-bg: #ececec;
-            --titlebar-bg: linear-gradient(to bottom, #ebebeb, #d5d5d5);
-            --text-color: #333;
         }
 
         * {
             box-sizing: border-box;
+            user-select: none;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            user-select: none;
         }
 
-        body {
-            background: var(--mac-bg);
-            background-image: radial-gradient(circle, #4b80b0 0%, #1a3c5c 100%);
-            height: 100vh;
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ Pro W3", "Meiryo", sans-serif;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            background: #2b5cb3 url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920') no-repeat center center;
+            background-size: cover;
         }
 
-        /* --- macOS Menu Bar --- */
+        /* --- Menu Bar --- */
         #menu-bar {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(10px);
-            height: 24px;
+            width: 100%;
+            height: 22px;
+            background: rgba(235, 235, 235, 0.95);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0 15px;
             font-size: 13px;
+            font-weight: 500;
             color: #000;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            position: absolute;
+            top: 0;
             z-index: 9999;
         }
 
         .menu-left, .menu-right {
             display: flex;
+            align-items: center;
             gap: 15px;
         }
 
@@ -53,68 +55,69 @@
             cursor: pointer;
         }
         .menu-item.bold {
-            font-weight: bold;
+            font-weight: 900;
         }
 
-        /* --- Desktop --- */
+        /* --- Desktop Icons --- */
         #desktop {
-            flex: 1;
-            position: relative;
+            width: 100%;
+            height: calc(100% - 22px);
+            position: absolute;
+            top: 22px;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 25px;
         }
 
         .desktop-icon {
-            width: 70px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            text-align: center;
-            color: white;
-            font-size: 11px;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            width: 80px;
             cursor: pointer;
-            position: absolute;
-            right: 20px;
-            top: 40px;
+            text-align: center;
         }
 
         .desktop-icon img {
             width: 45px;
             height: 45px;
-            margin-bottom: 5px;
-            background: #e0e0e0;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            color: #333;
-            text-shadow: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
         }
 
-        /* --- macOS Window (DVD Player Container) --- */
-        .mac-window {
+        .desktop-icon span {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.2);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        /* --- DVD Player Window --- */
+        .window {
             position: absolute;
             top: 10%;
             left: 15%;
-            width: 640px;
-            background: #000;
+            width: 720px;
+            background: #111;
             border-radius: 5px 5px 0 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #555;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.55);
+            border: 1px solid #444;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
-        .titlebar {
-            background: var(--titlebar-bg);
-            height: 22px;
-            border-bottom: 1px solid #b5b5b5;
-            border-radius: 5px 5px 0 0;
+        .window-header {
+            height: 24px;
+            background: linear-gradient(to bottom, #ebebeb, #bcbcbc);
+            border-bottom: 1px solid #999;
             display: flex;
             align-items: center;
-            padding: 0 8px;
+            padding: 0 10px;
             position: relative;
         }
 
@@ -127,36 +130,48 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            border: 1px solid rgba(0,0,0,0.12);
+            border: 1px solid rgba(0,0,0,0.15);
         }
-        .btn-close { background: #ff5f56; }
-        .btn-minimize { background: #ffbd2e; }
-        .btn-zoom { background: #27c93f; }
+        .win-close { background: #ff5f56; }
+        .win-minimize { background: #ffbd2e; }
+        .win-maximize { background: #27c93f; }
 
         .window-title {
             position: absolute;
             width: 100%;
             text-align: center;
-            font-size: 12px;
-            color: #444;
-            pointer-events: none;
             left: 0;
+            font-size: 12px;
+            color: #333;
+            font-weight: 600;
+            pointer-events: none;
         }
 
-        /* --- DVD Screen Viewport --- */
-        #dvd-screen {
+        /* --- DVD Video Screen Area --- */
+        #video-container {
             width: 100%;
-            height: 360px; /* 16:9 Aspect Ratio placeholder */
-            background: #111;
+            height: 405px; /* 16:9 Aspect Ratio within 720px width */
+            background: #000;
             position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
-            color: #fff;
         }
 
-        /* DVD Menu Layers */
+        #dvd-screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            color: #fff;
+            font-family: "Times New Roman", serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- DVD Menu Assets (Pure CSS/JSON driven) --- */
         .dvd-layer {
             position: absolute;
             top: 0;
@@ -171,158 +186,177 @@
             background-position: center;
         }
 
-        .active-layer {
-            display: flex !important;
+        .dvd-layer.active {
+            display: flex;
         }
 
-        /* Video Simulation Styling */
-        #video-simulation {
+        /* Warning Screen */
+        #layer-warning {
+            padding: 40px;
+            font-size: 14px;
+            line-height: 1.8;
+            color: #ccc;
+            text-align: justify;
+        }
+
+        /* Main Menu Styling */
+        #layer-main-menu {
+            background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1000') no-repeat center;
+            background-size: cover;
+        }
+
+        .starwars-logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #FFE81F;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255,232,31,0.5);
+            margin-bottom: 5px;
+            font-family: 'Arial Black', sans-serif;
+        }
+
+        .episode-title {
+            font-size: 16px;
+            color: #fff;
+            letter-spacing: 4px;
+            margin-bottom: 60px;
+            text-transform: uppercase;
+        }
+
+        .dvd-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .dvd-btn {
+            color: #999;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            letter-spacing: 2px;
+            padding: 2px 10px;
+        }
+
+        .dvd-btn:hover, .dvd-btn.selected {
+            color: #FFE81F;
+            text-shadow: 0 0 8px rgba(255,232,31,0.8);
+        }
+
+        /* Video Simulation Overlay */
+        #layer-playback {
+            background: #000;
+        }
+        
+        .video-canvas {
             width: 100%;
             height: 100%;
-            background: #050505;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
-            padding: 20px;
+            background: radial-gradient(circle, #220000 0%, #000000 80%);
         }
 
-        .starwars-crawl {
-            color: #feda4a;
-            font-family: "Franklin Gothic Medium", Arial, sans-serif;
-            font-weight: bold;
+        #crawl-text {
+            width: 60%;
             text-align: justify;
-            width: 70%;
+            color: #ffe81f;
+            font-size: 18px;
+            line-height: 1.6;
             transform: perspective(300px) rotateX(25deg);
-            animation: crawl 30s linear infinite;
-            position: absolute;
-            bottom: -100px;
+            transform-origin: 50% 100%;
+            animation: crawl 20s linear infinite;
+            display: none;
         }
 
         @keyframes crawl {
-            0% { top: 100%; transform: perspective(300px) rotateX(25deg) translateY(0); }
-            100% { top: -150%; transform: perspective(300px) rotateX(25deg) translateY(-1000px); }
+            0% { transform: perspective(300px) rotateX(20deg) translateY(250px); opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: perspective(300px) rotateX(20deg) translateY(-300px); opacity: 0; }
         }
 
-        /* Interactive DVD UI Buttons */
-        .dvd-menu-options {
-            margin-top: 80px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 10;
-        }
-
-        .dvd-btn {
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid #555;
-            color: #ccc;
-            padding: 6px 20px;
-            font-size: 14px;
-            cursor: pointer;
-            text-transform: uppercase;
-            border-radius: 3px;
-            transition: all 0.2s;
-        }
-
-        .dvd-btn:hover, .dvd-btn.selected {
-            border-color: #feda4a;
-            color: #fff;
-            box-shadow: 0 0 10px #feda4a;
-            transform: scale(1.05);
-        }
-
-        /* --- Brushed Aluminum macOS DVD Controller --- */
-        #dvd-controller {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 320px;
-            background: linear-gradient(180deg, #cccccc 0%, #aaaaaa 50%, #888888 100%);
-            border: 1px solid #666;
-            border-radius: 30px;
-            padding: 12px 20px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .controller-row {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            align-items: center;
-        }
-
-        .ctr-btn {
-            background: linear-gradient(180deg, #ffffff 0%, #eaeaea 40%, #cccccc 100%);
-            border: 1px solid #777;
-            border-radius: 5px;
-            padding: 5px 10px;
-            font-size: 11px;
-            font-weight: bold;
-            color: #333;
-            cursor: pointer;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.2);
-            min-width: 45px;
-            text-align: center;
-        }
-
-        .ctr-btn:active {
-            background: #bbb;
-            box-shadow: inset 0 2px 3px rgba(0,0,0,0.3);
-        }
-
-        .round-cluster {
-            display: flex;
-            gap: 5px;
-        }
-
-        #lcd-display {
-            background: #111;
-            border: 1px solid #555;
-            border-radius: 4px;
-            width: 100%;
-            height: 24px;
-            color: #00ff00;
-            font-family: monospace;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 8px;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
-        }
-
-        /* Subtitle Overlays */
-        #subtitle-overlay {
+        .subtitle-bar {
             position: absolute;
             bottom: 30px;
             width: 100%;
             text-align: center;
             font-size: 18px;
             color: #ffffff;
-            text-shadow: 2px 2px 4px #000, -2px -2px 4px #000;
-            z-index: 100;
-            pointer-events: none;
-            display: none;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+            font-family: "Hiragino Mincho ProN", serif;
+            letter-spacing: 1px;
+            font-weight: bold;
         }
 
-        /* Info Overlay */
-        .info-badge {
+        /* --- Hardware-Style Controller Bar --- */
+        #controller-dock {
+            width: 380px;
+            height: 48px;
+            background: linear-gradient(to bottom, #555, #222);
+            border-radius: 24px;
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 5px 10px;
-            border-radius: 4px;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            border: 1px solid #111;
+            z-index: 1000;
+        }
+
+        .ctrl-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ctrl-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, #888, #444);
+            border: 1px solid #222;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 1px 2px rgba(0,0,0,0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
             font-size: 11px;
-            border: 1px solid #444;
-            pointer-events: none;
+        }
+
+        .ctrl-btn:active {
+            background: linear-gradient(to bottom, #444, #222);
+        }
+
+        .ctrl-btn.main-play {
+            width: 34px;
+            height: 34px;
+            font-size: 14px;
+        }
+
+        /* --- Chapter / Status Display --- */
+        #lcd-panel {
+            width: 110px;
+            height: 26px;
+            background: #151d12;
+            border-radius: 4px;
+            border: 1px solid #333;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+            font-family: monospace;
+            color: #00ff33;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 4px rgba(0,255,51,0.6);
         }
     </style>
 </head>
@@ -336,315 +370,229 @@
             <span class="menu-item">編集</span>
             <span class="menu-item">コントロール</span>
             <span class="menu-item">オーディオ</span>
-            <span class="menu-item">映像</span>
-            <span class="menu-item">ウィンドウ</span>
+            <span class="menu-item">ウインドウ</span>
         </div>
         <div class="menu-right">
-            <span id="current-time">2005-11-23 12:00</span>
+            <span id="os-clock">2005年11月23日(水) 21:33</span>
         </div>
     </div>
 
     <div id="desktop">
-        <div class="desktop-icon" id="dvd-icon">
-            <div>💿</div>
-            <span>CHARLOTTE_DISC1</span>
+        <div class="desktop-icon" double-click="mountDVD()" onclick="mountDVD()">
+            <img src="https://cdn-icons-png.flaticon.com/512/725/725301.png" alt="DVD Disc">
+            <span>SWR1_RIT_S3</span>
         </div>
+    </div>
 
-        <div class="mac-window" id="player-window">
-            <div class="titlebar">
-                <div class="window-buttons">
-                    <div class="win-btn btn-close"></div>
-                    <div class="win-btn btn-minimize"></div>
-                    <div class="win-btn btn-zoom"></div>
-                </div>
-                <div class="window-title">DVDプレイヤー</div>
+    <div class="window" id="dvd-player-window">
+        <div class="window-header">
+            <div class="window-buttons">
+                <div class="win-btn win-close"></div>
+                <div class="win-btn win-minimize"></div>
+                <div class="win-btn win-maximize"></div>
             </div>
-            
+            <div class="window-title">DVDプレーヤー</div>
+        </div>
+        
+        <div id="video-container">
             <div id="dvd-screen">
-                <div class="info-badge" id="media-info">DVD-9 / NTSC / 16:9 LB</div>
                 
-                <div id="subtitle-overlay"></div>
-
-                <div id="layer-warning" class="dvd-layer active-layer" style="background: #000;">
-                    <div style="width:80%; text-align:center; font-size:12px; color:#aaa; line-height:1.6;">
-                        <p>【警告】ご視聴に関するご注意</p>
-                        <br>
-                        <p>このビデオグラム及びパッケージに関するすべての権利は著作権者に留保され、家庭内視聴を目的とした販売に限って許可されています。それ以外の無断上映、複製、公衆送信、改変等は法律により厳しく禁止されています。</p>
-                    </div>
+                <div id="layer-warning" class="dvd-layer active">
+                    <p style="text-align: center; font-weight: bold; margin-bottom: 10px; color: #fff;">警告</p>
+                    このビデオ・ディスク（有線放送並びにパッケージされたメディアを含む）は家庭内での個人的視聴を目的とした販売またはレンタルに限定して許諾されています。著作権者に無断で、複製、公衆送信、上映等を行うことは法律により固く禁止されています。
                 </div>
 
-                <div id="layer-main-menu" class="dvd-layer" style="background-image: radial-gradient(circle, #222 0%, #050505 100%);">
-                    <h2 style="color: #feda4a; font-family: sans-serif; letter-spacing: 2px; margin-bottom: 5px;">STAR WARS</h2>
-                    <h3 style="color: #bbb; font-size: 14px; margin-bottom: 20px;">エピソード3 / シスの復讐</h3>
-                    <div class="dvd-menu-options">
-                        <button class="dvd-btn" onclick="actions.playMovie()">本編再生 (PLAY MOVIE)</button>
-                        <button class="dvd-btn" onclick="actions.switchLayer('layer-audio-menu')">音声・字幕設定 (LANGUAGES)</button>
-                        <button class="dvd-btn" onclick="actions.switchLayer('layer-chapters-menu')">チャプター選択 (CHAPTERS)</button>
-                    </div>
-                </div>
-
-                <div id="layer-audio-menu" class="dvd-layer" style="background: #111;">
-                    <h3 style="color:#feda4a; margin-bottom:20px;">AUDIO & SUBTITLE OPTIONS</h3>
-                    <div style="display:flex; gap:40px;">
-                        <div>
-                            <h4 style="color:#aaa; font-size:12px; margin-bottom:10px;">音声 (AUDIO)</h4>
-                            <div class="dvd-menu-options" style="margin-top:0;">
-                                <button class="dvd-btn audio-opt" onclick="actions.setAudio('en')">English Dolby 5.1 EX</button>
-                                <button class="dvd-btn audio-opt" onclick="actions.setAudio('ja')">日本語 Dolby 5.1 EX</button>
-                            </div>
+                <div id="layer-main-menu" class="dvd-layer">
+                    <div class="starwars-logo">STAR WARS</div>
+                    <div class="episode-title">EPISODE III / シスの復讐</div>
+                    <div class="dvd-options" id="menu-options-container">
                         </div>
-                        <div>
-                            <h4 style="color:#aaa; font-size:12px; margin-bottom:10px;">字幕 (SUBTITLES)</h4>
-                            <div class="dvd-menu-options" style="margin-top:0;">
-                                <button class="dvd-btn sub-opt" onclick="actions.setSubtitles('ja')">日本語字幕</button>
-                                <button class="dvd-btn sub-opt" onclick="actions.setSubtitles('en')">English</button>
-                                <button class="dvd-btn sub-opt" onclick="actions.setSubtitles('none')">OFF</button>
-                            </div>
+                </div>
+
+                <div id="layer-playback" class="dvd-layer">
+                    <div class="video-canvas">
+                        <div id="crawl-text">
+                            エピソード3<br>
+                            シスの復讐<br><br>
+                            戦乱！共和制は、非情なるシス卿、ドゥークー伯爵の容赦なき攻撃の下に崩壊しつつあった。双方に英雄が乱立し、悪が国を分断する...
                         </div>
-                    </div>
-                    <button class="dvd-btn" style="margin-top:30px;" onclick="actions.switchLayer('layer-main-menu')">メインメニューに戻る</button>
-                </div>
-
-                <div id="layer-chapters-menu" class="dvd-layer" style="background: #111;">
-                    <h3 style="color:#feda4a; margin-bottom:20px;">CHAPTER SELECTION</h3>
-                    <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;">
-                        <button class="dvd-btn" onclick="actions.playChapter(1)">Ch 1: コルサント上空の戦い</button>
-                        <button class="dvd-btn" onclick="actions.playChapter(2)">Ch 2: グリーヴァス将軍</button>
-                        <button class="dvd-btn" onclick="actions.playChapter(3)">Ch 3: パドメとの再会</button>
-                        <button class="dvd-btn" onclick="actions.playChapter(4)">Ch 4: ムスタファーの決闘</button>
-                    </div>
-                    <button class="dvd-btn" style="margin-top:20px;" onclick="actions.switchLayer('layer-main-menu')">メインメニューに戻る</button>
-                </div>
-
-                <div id="layer-video" class="dvd-layer">
-                    <div id="video-simulation">
-                        <div id="crawl-container" class="starwars-crawl">
-                            EPISODE III<br>
-                            REVENGE OF THE SITH<br><br>
-                            War! The Republic is crumbling under attacks by the ruthless Sith Lord, Count Dooku. There are heroes on both sides. Evil is everywhere...
-                        </div>
+                        <div class="subtitle-bar" id="subtitle-output"></div>
                     </div>
                 </div>
 
-            </div>
-        </div>
-
-        <div id="dvd-controller">
-            <div class="controller-row">
-                <div id="lcd-display">
-                    <span id="lcd-status">STOP</span>
-                    <span id="lcd-track">TITLE 01  CH 00</span>
-                    <span id="lcd-time">00:00:00</span>
-                </div>
-            </div>
-            <div class="controller-row">
-                <button class="ctr-btn" onclick="actions.pressMenu()">MENU</button>
-                <div class="round-cluster">
-                    <button class="ctr-btn" onclick="actions.prevChapter()">|◀</button>
-                    <button class="ctr-btn" onclick="actions.playMovie()">▶</button>
-                    <button class="ctr-btn" onclick="actions.pauseMovie()">||</button>
-                    <button class="ctr-btn" onclick="actions.stopMovie()">■</button>
-                    <button class="ctr-btn" onclick="actions.nextChapter()">▶|</button>
-                </div>
-                <button class="ctr-btn" onclick="actions.switchLayer('layer-audio-menu')">音声</button>
             </div>
         </div>
     </div>
 
-    <script id="dvd-spec" type="application/json">
-    {
-        "disc": {
-            "title": "STAR WARS EPISODE 3 REVENGE OF THE SITH",
-            "region": 2,
-            "format": "DVD-9",
-            "tvSystem": "NTSC",
-            "aspectRatio": "16:9 Anamorphic",
-            "releaseDate": "2005-11-23",
-            "market": "Japan (ja-JP)"
-        },
-        "audioTracks": [
-            {"id": "en", "language": "English", "codec": "Dolby Digital 5.1 EX"},
-            {"id": "ja", "language": "日本語", "codec": "Dolby Digital 5.1 EX"}
-        ],
-        "subtitleTracks": [
-            {"id": "ja", "language": "日本語字幕"},
-            {"id": "en", "language": "English Subtitles"},
-            {"id": "none", "language": "None"}
-        ],
-        "chapters": [
-            {"id": 1, "title": "Battle Over Coruscant", "titleJa": "コルサント上空の戦い", "startSec": 0, "duration": 30},
-            {"id": 2, "title": "General Grievous", "titleJa": "グリーヴァス将軍", "startSec": 30, "duration": 30},
-            {"id": 3, "title": "Anakin and Padmé", "titleJa": "パドメとの再会", "startSec": 60, "duration": 30},
-            {"id": 4, "title": "Duel on Mustafar", "titleJa": "ムスタファーの決闘", "startSec": 90, "duration": 45}
-        ]
-    }
-    </script>
+    <div id="controller-dock">
+        <div class="ctrl-group">
+            <div class="ctrl-btn" onclick="goToMainMenu()" title="メニュー">MENU</div>
+            <div class="ctrl-btn" onclick="prevChapter()" title="前へ">|◀</div>
+        </div>
+        
+        <div class="ctrl-group">
+            <div class="ctrl-btn main-play" onclick="togglePlay()" id="play-btn" title="再生/一時停止">▶</div>
+            <div id="lcd-panel">STOP</div>
+        </div>
+
+        <div class="ctrl-group">
+            <div class="ctrl-btn" onclick="nextChapter()" title="次へ">▶|</div>
+            <div class="ctrl-btn" onclick="stopVideo()" title="停止">■</div>
+        </div>
+    </div>
 
     <script>
-        // Parse metadata embedded in specifications layer
-        const dvdSpec = JSON.parse(document.getElementById('dvd-spec').textContent);
-
-        // Core State Engine
-        let state = {
-            currentLayer: 'layer-warning',
-            isPlaying: false,
-            currentChapter: 1,
-            elapsedTime: 0,
-            selectedAudio: 'en',
-            selectedSubtitle: 'ja',
-            timerInterval: null
-        };
-
-        // Text assets mapping dynamically based on configuration selection
-        const subtitleScript = {
-            1: [
-                { time: 2, ja: "字幕：遠い昔、はるか彼方の銀河系で....", en: "A long time ago in a galaxy far, far away...." },
-                { time: 8, ja: "エピソード3 シスの復讐", en: "EPISODE III: REVENGE OF THE SITH" },
-                { time: 14, ja: "激動の宇宙空間！クローン戦争の火蓋が切られた。", en: "War! The Republic is crumbling under attacks." }
+        // DVD Meta Data Configuration Object (JSON style format)
+        const dvdConfig = {
+            "discName": "CHARLOTTE_DISC1",
+            "format": "DVD-9",
+            "region": 2,
+            "languageCode": "ja-JP",
+            "releaseDate": "2005-11-23",
+            "menuOptions": [
+                { "id": "play", "label": "本編再生 (PLAY MOVIE)" },
+                { "id": "chapters", "label": "チャプター選択 (CHAPTERS)" },
+                { "id": "audio", "label": "音声・字幕設定 (AUDIO/SUBTITLES)" },
+                { "id": "bonus", "label": "特典 (BONUS FEATURES)" }
             ],
-            2: [
-                { time: 32, ja: "グリーヴァス将軍：ドゥークー伯爵の命令に従え！", en: "General Grievous: Execute Count Dooku's orders!" }
-            ],
-            3: [
-                { time: 62, ja: "アナキン：君が恋しかった、パドメ。", en: "Anakin: I missed you so much, Padmé." }
-            ],
-            4: [
-                { time: 92, ja: "オビ＝ワン：私は君を弟だと思っていた！愛していた！", en: "Obi-Wan: You were my brother, Anakin! I loved you!" }
+            "chapters": [
+                { "num": 1, "time": "00:00:00", "subtitle": "遥か彼方の銀河系で…" },
+                { "num": 2, "time": "00:00:30", "subtitle": "コルサント上空での激しい宇宙戦" },
+                { "num": 3, "time": "00:04:15", "subtitle": "アナキンとオビ＝ワン、旗艦へ潜入" },
+                { "num": 4, "time": "00:10:00", "subtitle": "ドゥークー伯爵との宿命の対決" }
             ]
         };
 
-        // Interactive Interface Logic
-        const actions = {
-            switchLayer(layerId) {
-                document.querySelectorAll('.dvd-layer').forEach(l => l.classList.remove('active-layer'));
-                document.getElementById(layerId).classList.add('active-layer');
-                state.currentLayer = layerId;
-                
-                if(layerId === 'layer-main-menu') {
-                    this.updateLCD("MENU", `TITLE 01  CH 00`, "00:00:00");
+        let currentLayer = "warning";
+        let isPlaying = false;
+        let currentChapterIdx = 0;
+        let playbackInterval = null;
+        let runningSeconds = 0;
+
+        // Initialize App
+        window.onload = function() {
+            buildMenuOptions();
+            // Automatically transistion from structural legal warnings after 4 seconds
+            setTimeout(() => {
+                if(currentLayer === "warning") {
+                    changeLayer("main-menu");
+                    updateLCD("MENU");
                 }
-            },
-            
-            playMovie() {
-                this.switchLayer('layer-video');
-                state.isPlaying = true;
-                this.startTimer();
-                this.updateLCD("PLAY", `TITLE 01  CH ${String(state.currentChapter).padStart(2,'0')}`, formatTime(state.elapsedTime));
-            },
-
-            pauseMovie() {
-                if(!state.isPlaying) return;
-                state.isPlaying = false;
-                clearInterval(state.timerInterval);
-                document.getElementById('lcd-status').innerText = "PAUSE";
-            },
-
-            stopMovie() {
-                state.isPlaying = false;
-                clearInterval(state.timerInterval);
-                state.elapsedTime = 0;
-                state.currentChapter = 1;
-                document.getElementById('subtitle-overlay').style.display = 'none';
-                this.switchLayer('layer-main-menu');
-                this.updateLCD("STOP", "TITLE 01  CH 00", "00:00:00");
-            },
-
-            pressMenu() {
-                this.stopMovie();
-            },
-
-            playChapter(chNum) {
-                const targetChapter = dvdSpec.chapters.find(c => c.id === chNum);
-                if (targetChapter) {
-                    state.currentChapter = chNum;
-                    state.elapsedTime = targetChapter.startSec;
-                    this.playMovie();
-                }
-            },
-
-            nextChapter() {
-                if(state.currentChapter < dvdSpec.chapters.length) {
-                    this.playChapter(state.currentChapter + 1);
-                }
-            },
-
-            prevChapter() {
-                if(state.currentChapter > 1) {
-                    this.playChapter(state.currentChapter - 1);
-                }
-            },
-
-            setAudio(lang) {
-                state.selectedAudio = lang;
-                document.querySelectorAll('.audio-opt').forEach(btn => btn.classList.remove('selected'));
-                event.target.classList.add('selected');
-            },
-
-            setSubtitles(lang) {
-                state.selectedSubtitle = lang;
-                document.querySelectorAll('.sub-opt').forEach(btn => btn.classList.remove('selected'));
-                event.target.classList.add('selected');
-            },
-
-            updateLCD(status, track, time) {
-                document.getElementById('lcd-status').innerText = status;
-                document.getElementById('lcd-track').innerText = track;
-                document.getElementById('lcd-time').innerText = time;
-            },
-
-            startTimer() {
-                clearInterval(state.timerInterval);
-                state.timerInterval = setInterval(() => {
-                    state.elapsedTime++;
-                    
-                    // Track synchronization checks based on specifications array
-                    const currentChData = dvdSpec.chapters.find(c => state.elapsedTime >= c.startSec && state.elapsedTime < (c.startSec + c.duration));
-                    
-                    if (currentChData && currentChData.id !== state.currentChapter) {
-                        state.currentChapter = currentChData.id;
-                    } else if (!currentChData) {
-                        // End of stream logic loop back to menu boundary
-                        this.stopMovie();
-                        return;
-                    }
-
-                    this.updateLCD("PLAY", `TITLE 01  CH ${String(state.currentChapter).padStart(2,'0')}`, formatTime(state.elapsedTime));
-                    this.renderSubtitles();
-                }, 1000);
-            },
-
-            renderSubtitles() {
-                const subBox = document.getElementById('subtitle-overlay');
-                if (state.selectedSubtitle === 'none') {
-                    subBox.style.display = 'none';
-                    return;
-                }
-
-                const trackSubs = subtitleScript[state.currentChapter] || [];
-                const matchingSub = trackSubs.find(s => state.elapsedTime >= s.time && state.elapsedTime < s.time + 5);
-
-                if (matchingSub) {
-                    subBox.style.display = 'block';
-                    subBox.innerText = matchingSub[state.selectedSubtitle];
-                } else {
-                    subBox.style.display = 'none';
-                }
-            }
+            }, 4000);
         };
 
-        function formatTime(seconds) {
-            const hrs = Math.floor(seconds / 3600);
-            const mins = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        function buildMenuOptions() {
+            const container = document.getElementById('menu-options-container');
+            container.innerHTML = '';
+            dvdConfig.menuOptions.forEach((opt, idx) => {
+                const btn = document.createElement('div');
+                btn.className = `dvd-btn ${idx === 0 ? 'selected' : ''}`;
+                btn.innerText = opt.label;
+                btn.onclick = () => handleMenuSelect(opt.id);
+                container.appendChild(btn);
+            });
         }
 
-        // Auto transition out of DVD warning sequence layer after 5s to replicate playback initialization
-        setTimeout(() => {
-            if(state.currentLayer === 'layer-warning') {
-                actions.switchLayer('layer-main-menu');
+        function changeLayer(layerId) {
+            document.querySelectorAll('.dvd-layer').forEach(layer => layer.classList.remove('active'));
+            const target = document.getElementById(`layer-${layerId}`);
+            if (target) {
+                target.classList.add('active');
+                currentLayer = layerId;
             }
-        }, 5000);
+        }
+
+        function handleMenuSelect(actionId) {
+            if (actionId === 'play') {
+                startMoviePlayback();
+            } else {
+                alert(`「${actionId}」機能は2005年当時の仕様に基づき、Disc 1の本編専用に最適化されています。`);
+            }
+        }
+
+        function startMoviePlayback() {
+            changeLayer("playback");
+            isPlaying = true;
+            currentChapterIdx = 0;
+            runningSeconds = 0;
+            document.getElementById('play-btn').innerText = "‖";
+            document.getElementById('crawl-text').style.display = "block";
+            updateLCD("TITLE 01");
+            
+            clearInterval(playbackInterval);
+            playbackInterval = setInterval(runPlaybackEngine, 1000);
+        }
+
+        function runPlaybackEngine() {
+            if (!isPlaying) return;
+            runningSeconds++;
+            
+            // Format simulation timestamp
+            let mins = Math.floor(runningSeconds / 60);
+            let secs = runningSeconds % 60;
+            let timeStr = `CH${String(currentChapterIdx + 1).padStart(2, '0')} ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            updateLCD(timeStr);
+
+            // Update Mock Subtitle Strings based on index
+            if (runningSeconds < 8) {
+                document.getElementById('subtitle-output').innerText = dvdConfig.chapters[0].subtitle;
+            } else if (runningSeconds >= 8 && runningSeconds < 25) {
+                document.getElementById('crawl-text').style.display = "none";
+                document.getElementById('subtitle-output').innerText = dvdConfig.chapters[1].subtitle;
+            } else {
+                document.getElementById('subtitle-output').innerText = "アナキン「マスター、右側に敵の戦闘機が！」";
+            }
+        }
+
+        function togglePlay() {
+            if (currentLayer !== "playback") {
+                startMoviePlayback();
+                return;
+            }
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                document.getElementById('play-btn').innerText = "‖";
+            } else {
+                document.getElementById('play-btn').innerText = "▶";
+                updateLCD("PAUSE");
+            }
+        }
+
+        function stopVideo() {
+            isPlaying = false;
+            clearInterval(playbackInterval);
+            document.getElementById('play-btn').innerText = "▶";
+            document.getElementById('subtitle-output').innerText = "";
+            document.getElementById('crawl-text').style.display = "none";
+            changeLayer("main-menu");
+            updateLCD("MENU");
+        }
+
+        function goToMainMenu() {
+            stopVideo();
+        }
+
+        function nextChapter() {
+            if (currentLayer !== "playback") return;
+            currentChapterIdx = (currentChapterIdx + 1) % dvdConfig.chapters.length;
+            runningSeconds = currentChapterIdx * 12; // skip forward in time index
+            document.getElementById('crawl-text').style.display = "none";
+        }
+
+        function prevChapter() {
+            if (currentLayer !== "playback") return;
+            currentChapterIdx = currentChapterIdx - 1;
+            if (currentChapterIdx < 0) currentChapterIdx = 0;
+            runningSeconds = currentChapterIdx * 12;
+        }
+
+        function updateLCD(text) {
+            document.getElementById('lcd-panel').innerText = text;
+        }
+
+        function mountDVD() {
+            alert("ディスク情報: " + dvdConfig.discName + " [" + dvdConfig.format + "] Region " + dvdConfig.region + "\n発売日: " + dvdConfig.releaseDate);
+        }
     </script>
 </body>
 </html>
