@@ -37,18 +37,18 @@
 
 ### 📂 Sous-Menu: **Configuration**
 
-> **Langues (Audio)**
-> * [ ] English (DTS-HD Master Audio 6.1)
-> * [X] **Français (DTS 5.1)**
-> 
-> **Sous-titres**
-> * [ ] English
-> * [X] **Français**
-> * [ ] Deutsch
-> * [ ] Nederlands
-> * [ ] Aucun
-> 
-> 
+**Langues (Audio)**
+
+* [ ] English (DTS-HD Master Audio 6.1)
+* [X] **Français (DTS 5.1)**
+
+**Sous-titres**
+
+* [ ] English
+* [X] **Français**
+* [ ] Deutsch
+* [ ] Nederlands
+* [ ] Aucun
 
 ---
 
@@ -96,7 +96,7 @@ une armée de puissants vaisseaux de guerre...
 
 ---
 
-## 🛠️ Barre de menus de l'application macOS (Haut de l'écran)
+## 🛠️ Barre de menus de l’application macOS (Haut de l’écran)
 
 * **Lecteur Blu-ray** `À propos` `Préférences...` `Masquer` `Quitter`
 * **Fichier** `Ouvrir un disque... (⌘O)` `Ouvrir un dossier BDMV...` `Fermer (⌘W)`
