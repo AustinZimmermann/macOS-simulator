@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Blu-ray Player - Star Wars: Episode II</title>
+    <style>
+        :root {
+            --mac-bg: #1e1e1e;
+            --mac-title-bg: #2d2d2d;
+            --sw-blue: #00d2ff;
+            --sw-yellow: #ffe81f;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #3a3a3a;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #ffffff;
+            user-select: none;
+        }
+
+        /* macOS App Window Container */
+        .player-window {
+            width: 960px;
+            background: #0a0a0a;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+            border: 1px solid #444;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* macOS Title Bar */
+        .title-bar {
+            background: var(--mac-title-bg);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .dot-close { background: #ff5f56; }
+        .dot-minimize { background: #ffbd2e; }
+        .dot-zoom { background: #27c93f; }
+
+        .window-title {
+            font-size: 13px;
+            color: #b3b3b3;
+            font-weight: 500;
+        }
+
+        .media-info-tag {
+            font-size: 10px;
+            background: #444;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #ccc;
+        }
+
+        /* Main Viewport Container */
+        .viewport {
+            position: relative;
+            width: 100%;
+            height: 540px; /* 16:9 Aspect Ratio aspect ratio framework */
+            background: linear-gradient(180deg, #020208 0%, #051329 100%);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Dynamic Star Wars Blu-ray Menu Background Animation Simulation */
+        .space-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1%, transparent 10%) 0 0,
+                        radial-gradient(circle, rgba(255,255,255,0.08) 1%, transparent 8%) 50px 50px;
+            background-size: 100px 100px;
+            opacity: 0.6;
+        }
+
+        .coruscant-silhouette {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(to top, rgba(0, 210, 255, 0.15), transparent);
+            border-top: 1px solid rgba(0, 210, 255, 0.2);
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+        }
+
+        .ship {
+            position: absolute;
+            width: 4px;
+            height: 2px;
+            background: #fff;
+            box-shadow: 0 0 4px #00d2ff;
+            animation: fly linear infinite;
+        }
+        @keyframes fly {
+            0% { transform: translateX(-100px) translateY(50px); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateX(1060px) translateY(-20px); opacity: 0; }
+        }
+
+        /* Movie Title Art Overlay */
+        .menu-header {
+            position: absolute;
+            top: 40px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .menu-header h1 {
+            font-family: 'Georgia', serif;
+            font-size: 32px;
+            letter-spacing: 4px;
+            margin: 0;
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(0,210,255,0.5);
+        }
+
+        .menu-header h2 {
+            font-size: 14px;
+            letter-spacing: 6px;
+            margin: 5px 0 0 0;
+            color: var(--sw-yellow);
+            text-transform: uppercase;
+        }
+
+        /* Interactive Dynamic Blu-ray User Interface */
+        .bluray-overlay {
+            position: absolute;
+            bottom: 40px;
+            width: 85%;
+            background: rgba(5, 15, 25, 0.85);
+            border: 1px solid rgba(0, 210, 255, 0.4);
+            border-radius: 6px;
+            padding: 15px 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .nav-row {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .nav-item {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: #8a9ba8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--sw-blue);
+            text-shadow: 0 0 8px rgba(0, 210, 255, 0.6);
+            background: rgba(0, 210, 255, 0.1);
+        }
+
+        /* Sub-panels Grid */
+        .panel-content {
+            display: none;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        .panel-content.active {
+            display: grid;
+        }
+
+        .selection-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .selection-card:hover {
+            background: rgba(0, 210, 255, 0.15);
+            border-color: var(--sw-blue);
+            color: #fff;
+        }
+
+        .selection-card.selected {
+            background: rgba(255, 232, 31, 0.2);
+            border-color: var(--sw-yellow);
+            color: var(--sw-yellow);
+        }
+
+        /* Video Screen Simulation Popups */
+        .video-overlay-screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .video-overlay-screen.playing {
+            display: flex;
+        }
+
+        .video-placeholder {
+            width: 80%;
+            height: 60%;
+            border: 2px dashed #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #111, #222);
+        }
+
+        .close-video-btn {
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .close-video-btn:hover { background: #333; }
+
+        /* App Control Footer Status Bar */
+        .player-footer {
+            background: var(--mac-title-bg);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #1a1a1a;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .playback-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-transport {
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-transport:hover { color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="player-window">
+        <div class="title-bar">
+            <div class="window-controls">
+                <div class="control-dot dot-close"></div>
+                <div class="control-dot dot-minimize"></div>
+                <div class="control-dot dot-zoom"></div>
+            </div>
+            <div class="window-title">Star Wars: Episode II - Angriff der Klonkrieger (2002)</div>
+            <div class="media-info-tag">BD-50 | AVC</div>
+        </div>
+
+        <div class="viewport">
+            <div class="space-bg"></div>
+            
+            <div class="coruscant-silhouette">
+                <div class="ship" style="animation-duration: 12s; animation-delay: 0s;"></div>
+                <div class="ship" style="animation-duration: 8s; animation-delay: 3s;"></div>
+                <div class="ship" style="animation-duration: 15s; animation-delay: 1s;"></div>
+            </div>
+
+            <div class="menu-header">
+                <h1>Star Wars</h1>
+                <h2>Episode II – Angriff der Klonkrieger</h2>
+            </div>
+
+            <div class="bluray-overlay">
+                <div class="nav-row">
+                    <div class="nav-item active" onclick="switchTab('film')">Film Starten</div>
+                    <div class="nav-item" onclick="switchTab('kapitel')">Kapitelauswahl</div>
+                    <div class="nav-item" onclick="switchTab('sprachen')">Audio / Untertitel</div>
+                    <div class="nav-item" onclick="switchTab('extras')">Bonusmaterial</div>
+                </div>
+
+                <div id="panel-film" class="panel-content active">
+                    <div class="selection-card" style="grid-column: span 4;" onclick="playVideo('Hauptfilm', '02:22:26')">
+                        <strong>Hauptfilm abspielen (1080p AVC - 2.35:1 Cinematic Aspect)</strong>
+                    </div>
+                </div>
+
+                <div id="panel-kapitel" class="panel-content">
+                    <div class="selection-card" onclick="playVideo('Kapitel 1: Haupttitel', '00:00:00')">1. Haupttitel & Attentat</div>
+                    <div class="selection-card" onclick="playVideo('Kapitel 2: Wiedersehen', '00:11:42')">2. Altes Wiedersehen</div>
+                    <div class="selection-card" onclick="playVideo('Kapitel 3: Jagd durch Coruscant', '00:18:24')">3. Jagd durch Coruscant</div>
+                    <div class="selection-card" onclick="playVideo('Kapitel 4: Kamino Zuseher', '00:32:10')">4. Die verheimlichte Armee</div>
+                    <div class="selection-card" onclick="playVideo('Kapitel 5: Naboo Zuflucht', '00:45:12')">5. Zuflucht auf Naboo</div>
+                    <div class="selection-card" onclick="playVideo('Kapitel 6: Geonosis Arena', '01:38:50')">6. Die Arena von Geonosis</div>
+                    <div class="selection-card" onclick="playVideo('Kapitel 7: Die Klonkriege', '01:55:05')">7. Beginn der Klonkriege</div>
+                    <div class="selection-card" onclick="playVideo('Kapitel 8: Endcredits', '02:14:40')">8. Nachspann</div>
+                </div>
+
+                <div id="panel-sprachen" class="panel-content">
+                    <div class="selection-card selected" onclick="selectSetting(this)">Deutsch DTS 5.1</div>
+                    <div class="selection-card" onclick="selectSetting(this)">English DTS-HD MA 6.1</div>
+                    <div class="selection-card" onclick="selectSetting(this)">Untertitel: Deutsch</div>
+                    <div class="selection-card" onclick="selectSetting(this)">Untertitel: Aus</div>
+                </div>
+
+                <div id="panel-extras" class="panel-content">
+                    <div class="selection-card" onclick="playVideo('Audiokommentar von George Lucas & Crew', '02:22:26')">Audiokommentar Regie</div>
+                    <div class="selection-card" onclick="playVideo('Archiv-Auswahl: Unveröffentlichte Szenen', '00:12:45')">Nicht verwendete Szenen</div>
+                    <div class="selection-card" onclick="playVideo('Dokumentation: "Das kryogenische Design"', '00:24:15')">Design-Dokumentationen</div>
+                </div>
+            </div>
+
+            <div id="videoScreen" class="video-overlay-screen">
+                <div class="video-placeholder" id="videoTitleDisplay">Simuliere Videowiedergabe...</div>
+                <button class="close-video-btn" onclick="stopVideo()">Zurück zum Menü (Top Menu)</button>
+            </div>
+        </div>
+
+        <div class="player-footer">
+            <div class="playback-controls">
+                <button class="btn-transport">⏮</button>
+                <button class="btn-transport" onclick="alert('Wiedergabe pausiert/gestartet')">⏯</button>
+                <button class="btn-transport">⏭</button>
+                <span id="timestamp-tracker" style="color: #666; margin-left: 10px;">Menü-Modus</span>
+            </div>
+            <div>Bitrate: ~34.5 Mbps | Audio: DTS-HD</div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            // Update active state indicator lines
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Toggle target sub-menus
+            document.querySelectorAll('.panel-content').forEach(panel => panel.classList.remove('active'));
+            document.getElementById('panel-' + tabId).classList.add('active');
+        }
+
+        function selectSetting(element) {
+            // Basic UI toggler for configuration fields
+            element.parentNode.querySelectorAll('.selection-card').forEach(card => {
+                if(card.innerText.includes('Untertitel') === element.innerText.includes('Untertitel')) {
+                    card.classList.remove('selected');
+                } else if (!card.innerText.includes('Untertitel') && !element.innerText.includes('Untertitel')) {
+                    card.classList.remove('selected');
+                }
+            });
+            element.classList.add('selected');
+        }
+
+        function playVideo(title, duration) {
+            const screen = document.getElementById('videoScreen');
+            const display = document.getElementById('videoTitleDisplay');
+            const tracker = document.getElementById('timestamp-tracker');
+
+            display.innerHTML = `<div><strong>Spiele ab:</strong> ${title}</div><div style="font-size:12px; margin-top:8px; color:#aaa;">[Simuliere native Blu-ray Wiedergabe - ${duration}]</div>`;
+            tracker.innerText = `Laufzeit: 00:00:01 / ${duration}`;
+            screen.classList.add('playing');
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                stopVideo();
+            }
+        });
+
+        function stopVideo() {
+            document.getElementById('videoScreen').classList.remove('playing');
+            document.getElementById('timestamp-tracker').innerText = "Menü-Modus";
+        }
+    </script>
+</body>
+</html>
