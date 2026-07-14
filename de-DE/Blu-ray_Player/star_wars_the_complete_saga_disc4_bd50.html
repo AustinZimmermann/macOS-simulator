@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mac Blu-ray Player - Star Wars: Episode IV</title>
+    <style>
+        :root {
+            --mac-bg: #1e1e1e;
+            --mac-border: #404040;
+            --blue-glow: #00d2ff;
+            --starwars-yellow: #ffe81f;
+            --menu-text: #e0f7fc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: #111215 url('https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=3000') no-repeat center center/cover;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* macOS Window Frame */
+        .mac-player {
+            width: 1000px;
+            height: 640px;
+            background: #0a0b0d;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 210, 255, 0.15);
+            border: 1px solid var(--mac-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* macOS Title Bar */
+        .title-bar {
+            height: 38px;
+            background: linear-gradient(180deg, #2d2d2d 0%, #1c1c1c 100%);
+            border-bottom: 1px solid #121212;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .traffic-lights {
+            display: flex;
+            gap: 8px;
+            position: absolute;
+            left: 16px;
+        }
+
+        .light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .light.close { background: #ff5f56; border: 0.5px solid #e0443e; }
+        .light.minimize { background: #ffbd2e; border: 0.5px solid #dea123; }
+        .light.maximize { background: #27c93f; border: 0.5px solid #1aab29; }
+
+        .window-title {
+            width: 100%;
+            text-align: center;
+            color: #a0a0a0;
+            font-size: 13px;
+            letter-spacing: 0.4px;
+            font-weight: 400;
+        }
+
+        /* Screen Display */
+        .viewport {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        /* Starfield Loop Background */
+        .starfield-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(10,24,50,1) 0%, rgba(3,5,10,1) 100%);
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .starfield-bg::after {
+            content: "";
+            position: absolute;
+            width: 300%;
+            height: 300%;
+            top: -100%;
+            left: -100%;
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+                radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-repeat: repeat;
+            animation: starScroll 240s linear infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes starScroll {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Interactive Blu-ray Menu Overlay */
+        .bd-menu-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 50px 60px;
+            transition: opacity 0.5s ease;
+        }
+
+        /* BD Info Header */
+        .bd-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid rgba(0, 210, 255, 0.3);
+            padding-bottom: 15px;
+        }
+
+        .bd-logo-area h1 {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .bd-logo-area h2 {
+            color: var(--blue-glow);
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .bd-tech-specs {
+            color: #6a7c85;
+            font-size: 10px;
+            text-align: right;
+            line-height: 1.5;
+            letter-spacing: 1px;
+        }
+
+        /* Main Menu Layout */
+        .bd-main-grid {
+            display: flex;
+            gap: 40px;
+            margin-top: auto;
+            margin-bottom: 40px;
+            align-items: flex-end;
+        }
+
+        .menu-navigation {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 250px;
+            border-left: 2px solid var(--blue-glow);
+            padding-left: 20px;
+        }
+
+        .menu-item {
+            color: var(--menu-text);
+            font-size: 16px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            padding: 4px 0;
+            text-shadow: 0 0 5px rgba(0, 210, 255, 0.2);
+        }
+
+        .menu-item:hover, .menu-item.active {
+            color: #ffffff;
+            text-shadow: 0 0 12px var(--blue-glow), 0 0 20px var(--blue-glow);
+            transform: translateX(5px);
+        }
+
+        .menu-item::before {
+            content: '▶';
+            position: absolute;
+            left: -20px;
+            font-size: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            color: var(--blue-glow);
+        }
+
+        .menu-item:hover::before, .menu-item.active::before {
+            opacity: 1;
+        }
+
+        /* Submenus Panel */
+        .submenu-panel {
+            flex-grow: 1;
+            height: 220px;
+            background: rgba(4, 12, 24, 0.75);
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            border-radius: 4px;
+            padding: 20px;
+            position: relative;
+            display: none;
+            overflow-y: auto;
+            backdrop-filter: blur(5px);
+        }
+
+        .submenu-panel.active {
+            display: block;
+            animation: panelFade 0.3s ease;
+        }
+
+        @keyframes panelFade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .submenu-title {
+            color: var(--blue-glow);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 210, 255, 0.15);
+            padding-bottom: 6px;
+        }
+
+        .grid-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .option-button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 210, 255, 0.2);
+            color: #fff;
+            padding: 10px;
+            text-align: left;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .option-button:hover, .option-button.selected {
+            background: rgba(0, 210, 255, 0.15);
+            border-color: var(--blue-glow);
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+        }
+
+        /* Movie Playback Simulation Screen */
+        .playback-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 8;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .playback-screen.active {
+            display: flex;
+        }
+
+        /* Star Wars 3D Crawl Simulation */
+        .crawl-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            perspective: 300px;
+            color: var(--starwars-yellow);
+            font-weight: bold;
+            text-align: justify;
+            overflow: hidden;
+            display: none;
+        }
+
+        .crawl-content {
+            position: absolute;
+            top: 100%;
+            width: 60%;
+            left: 20%;
+            font-size: 20px;
+            line-height: 1.6;
+            transform-origin: 50% 100%;
+            transform: rotateX(25deg) translateY(0);
+            animation: crawlProgress 45s linear infinite;
+        }
+
+        @keyframes crawlProgress {
+            0% {
+                transform: rotateX(25deg) translateY(0);
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: rotateX(25deg) translateY(-1400px);
+                opacity: 0;
+            }
+        }
+
+        .crawl-title {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        /* Ambient Stars in Playback */
+        .canvas-simulation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* Custom macOS Blu-ray Control Bar (System Bottom Dock styling) */
+        .control-bar {
+            height: 54px;
+            background: linear-gradient(180deg, #1e1e1e 0%, #111111 100%);
+            border-top: 1px solid var(--mac-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+        }
+
+        .playback-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: #a0a0a0;
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.2s;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .control-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Timings and Scrubber */
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-grow: 1;
+            margin: 0 40px;
+        }
+
+        .time-display {
+            color: #888;
+            font-size: 11px;
+            font-family: monospace;
+            width: 60px;
+        }
+
+        .progress-bar-wrap {
+            flex-grow: 1;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--blue-glow);
+            width: 0%;
+            border-radius: 2px;
+            box-shadow: 0 0 6px rgba(0, 210, 255, 0.8);
+        }
+
+        .right-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .volume-slider {
+            width: 70px;
+            -webkit-appearance: none;
+            background: #333;
+            height: 4px;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        /* Disc Title Widget */
+        .disc-widget {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .disc-icon {
+            color: var(--blue-glow);
+            font-size: 16px;
+            animation: spin 8s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .disc-meta {
+            font-size: 11px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mac-player">
+        <div class="title-bar">
+            <div class="traffic-lights">
+                <div class="light close" onclick="resetState()"></div>
+                <div class="light minimize"></div>
+                <div class="light maximize"></div>
+            </div>
+            <div class="window-title">Mac Blu-ray Player - A_MEW_HOPE</div>
+        </div>
+
+        <div class="viewport" id="viewport">
+            
+            <div class="starfield-bg"></div>
+
+            <div class="bd-menu-container" id="mainMenuContainer">
+                <div class="bd-header">
+                    <div class="bd-logo-area">
+                        <h1>STAR WARS</h1>
+                        <h2>EPISODE IV: A NEW HOPE</h2>
+                    </div>
+                    <div class="bd-tech-specs">
+                        BLU-RAY DISC 4 • BD-50 AVC<br>
+                        1977-2005 THE COMPLETE SAGA<br>
+                        1080p HIGH DEFINITION
+                    </div>
+                </div>
+
+                <div class="bd-main-grid">
+                    <div class="menu-navigation">
+                        <div class="menu-item active" onclick="playMovie()" onmouseenter="beepSound()">Film starten</div>
+                        <div class="menu-item" onclick="openMenu('kapitel')" onmouseenter="beepSound()">Kapitelauswahl</div>
+                        <div class="menu-item" onclick="openMenu('audio')" onmouseenter="beepSound()">Ton & Untertitel</div>
+                        <div class="menu-item" onclick="openMenu('extras')" onmouseenter="beepSound()">Extras</div>
+                    </div>
+
+                    <div class="submenu-panel" id="panel-kapitel">
+                        <div class="submenu-title">Kapitelauswahl</div>
+                        <div class="grid-options">
+                            <button class="option-button" onclick="playChapter(0, 'Die Blockadenbrecherin')">1. Die Blockadenbrecherin (0:00)</button>
+                            <button class="option-button" onclick="playChapter(735, 'Begegnung mit Obi-Wan')">2. Begegnung mit Obi-Wan (12:15)</button>
+                            <button class="option-button" onclick="playChapter(2470, 'Die Kantina von Mos Eisley')">3. Die Kantina von Mos Eisley (41:10)</button>
+                            <button class="option-button" onclick="playChapter(4350, 'Die Rettung der Prinzessin')">4. Die Rettung der Prinzessin (1:12:30)</button>
+                        </div>
+                    </div>
+
+                    <div class="submenu-panel" id="panel-audio">
+                        <div class="submenu-title">Spracheinstellungen</div>
+                        <div style="display: flex; gap: 20px;">
+                            <div style="flex:1;">
+                                <div style="color: #6a7c85; font-size: 11px; margin-bottom: 8px;">AUDIO</div>
+                                <button class="option-button selected" style="width:100%; margin-bottom:6px;">Deutsch DTS-HD HR 5.1</button>
+                                <button class="option-button" style="width:100%;">English DTS-HD MA 6.1</button>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="color: #6a7c85; font-size: 11px; margin-bottom: 8px;">UNTERTITEL</div>
+                                <button class="option-button selected" style="width:100%; margin-bottom:6px;">Deutsch (Ausblenden)</button>
+                                <button class="option-button" style="width:100%;">English</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="submenu-panel" id="panel-extras">
+                        <div class="submenu-title">Zusatzmaterial & Extras</div>
+                        <div class="grid-options">
+                            <button class="option-button" onclick="playExtra('LucasCommentary')">Audiokommentar von George Lucas, Carrie Fisher u.a.</button>
+                            <button class="option-button" onclick="playExtra('ArchivalInterviews')">Archiv-Interviews mit Darstellern & Crew</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="playback-screen" id="playbackScreen">
+                <canvas class="canvas-simulation" id="spaceCanvas"></canvas>
+                
+                <div class="crawl-container" id="crawlContainer">
+                    <div class="crawl-content">
+                        <p style="text-align: center; margin-bottom: 10px;">EPISODE IV</p>
+                        <div class="crawl-title">EINE NEUE HOFFNUNG</div>
+                        <p>Es herrscht Bürgerkrieg. Die Raumschiffe der Rebellen, die von einem geheimen Stützpunkt aus operieren, haben ihren ersten Sieg gegen das böse Galaktische Imperium errungen.</p>
+                        <br>
+                        <p>Während der Schlacht ist es Spionen der Rebellen gelungen, Geheimpläne über die ultimative Waffe des Imperiums zu stehlen, den TODESSTERN, eine gepanzerte Raumstation, deren Feuerkraft ausreicht, um einen ganzen Planeten zu vernichten.</p>
+                        <br>
+                        <p>Verfolgt von den finsteren Agenten des Imperiums, jagt Prinzessin Leia an Bord ihres Raumschiffes nach Hause, als Hüterin der gestohlenen Pläne, die ihr Volk retten und der Galaxis die Freiheit wiedergeben könnten....</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="control-bar">
+            <div class="playback-controls">
+                <button class="control-btn" onclick="togglePlay()" id="playPauseBtn">▶</button>
+                <button class="control-btn" onclick="stopPlayback()">■</button>
+                <button class="control-btn" onclick="stepBack()">◀◀</button>
+                <button class="control-btn" onclick="stepForward()">▶▶</button>
+            </div>
+
+            <div class="progress-container">
+                <div class="time-display" id="elapsedTime">00:00:00</div>
+                <div class="progress-bar-wrap" onclick="seekVideo(event)">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="time-display" id="totalTime" style="text-align: right;">02:04:43</div>
+            </div>
+
+            <div class="right-controls">
+                <div class="volume-control">
+                    <span style="color:#aaa; font-size:12px;">🔊</span>
+                    <input type="range" class="volume-slider" min="0" max="100" value="80" oninput="changeVolume(this.value)">
+                </div>
+                <div class="disc-widget">
+                    <span class="disc-icon">💿</span>
+                    <div class="disc-meta">
+                        <strong>DISC 4</strong><br>
+                        <span style="font-size:9px; color:#aaa;">BD-ROM (de-DE)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio Synthesizer Setup (Web Audio API)
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function beepSound() {
+            initAudio();
+            if (!audioCtx) return;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime); // high clean chirp
+            gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function selectSound() {
+            initAudio();
+            if (!audioCtx) return;
+            // Hum + laser burst sound
+            let osc1 = audioCtx.createOscillator();
+            let osc2 = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc1.type = "sawtooth";
+            osc1.frequency.setValueAtTime(220, audioCtx.currentTime);
+            osc1.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.3);
+            
+            osc2.type = "sine";
+            osc2.frequency.setValueAtTime(440, audioCtx.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.3);
+            
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            
+            osc1.start();
+            osc2.start();
+            osc1.stop(audioCtx.currentTime + 0.35);
+            osc2.stop(audioCtx.currentTime + 0.35);
+        }
+
+        // State Machine variables
+        let activeSubmenu = null;
+        let isPlaying = false;
+        let playTimer = null;
+        let currentSeconds = 0;
+        const totalDuration = 7483; // Episode IV: 2 hours 4 mins 43 secs
+        
+        // Canvas Starfield Simulation (during playback)
+        const canvas = document.getElementById('spaceCanvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        let animationFrameId;
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < 150; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width - canvas.width / 2,
+                    y: Math.random() * canvas.height - canvas.height / 2,
+                    z: Math.random() * canvas.width,
+                    color: `hsl(${200 + Math.random()*40}, 80%, ${80 + Math.random()*20}%)`
+                });
+            }
+        }
+
+        function drawSpace() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            
+            for (let i = 0; i < stars.length; i++) {
+                let s = stars[i];
+                s.z -= 1.5; // flyby speed
+                if (s.z <= 0) {
+                    s.z = canvas.width;
+                    s.x = Math.random() * canvas.width - cx;
+                    s.y = Math.random() * canvas.height - cy;
+                }
+                
+                let px = (s.x / s.z) * cx + cx;
+                let py = (s.y / s.z) * cy + cy;
+                let size = (1 - s.z / canvas.width) * 5;
+                
+                ctx.fillStyle = s.color;
+                ctx.beginPath();
+                ctx.arc(px, py, size > 0.1 ? size : 0.1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            animationFrameId = requestAnimationFrame(drawSpace);
+        }
+
+        // Controller Navigation Logic
+        function openMenu(menuId) {
+            selectSound();
+            const allPanels = document.querySelectorAll('.submenu-panel');
+            allPanels.forEach(panel => panel.classList.remove('active'));
+            
+            const items = document.querySelectorAll('.menu-item');
+            items.forEach(item => item.classList.remove('active'));
+
+            if (activeSubmenu === menuId) {
+                activeSubmenu = null;
+            } else {
+                activeSubmenu = menuId;
+                document.getElementById(`panel-${menuId}`).classList.add('active');
+                // find and highlight target menu-item
+                const targetIdx = { 'kapitel': 1, 'audio': 2, 'extras': 3 }[menuId];
+                items[targetIdx].classList.add('active');
+            }
+        }
+
+        function playMovie() {
+            selectSound();
+            document.getElementById('mainMenuContainer').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('mainMenuContainer').style.display = 'none';
+                document.getElementById('playbackScreen').classList.add('active');
+                document.getElementById('crawlContainer').style.display = 'block';
+                resizeCanvas();
+                initStars();
+                drawSpace();
+                startPlayLoop();
+            }, 500);
+        }
+
+        function playChapter(seconds, title) {
+            currentSeconds = seconds;
+            playMovie();
+            // Jump simulated timeline
+            updateTimelineDisplay();
+        }
+
+        function playExtra(extraName) {
+            playMovie();
+            document.getElementById('crawlContainer').style.display = 'none';
+        }
+
+        function startPlayLoop() {
+            isPlaying = true;
+            document.getElementById('playPauseBtn').innerText = '❚❚';
+            if (playTimer) clearInterval(playTimer);
+            playTimer = setInterval(() => {
+                if (currentSeconds < totalDuration) {
+                    currentSeconds++;
+                    updateTimelineDisplay();
+                } else {
+                    stopPlayback();
+                }
+            }, 1000);
+        }
+
+        function updateTimelineDisplay() {
+            const progressFill = document.getElementById('progressFill');
+            const pct = (currentSeconds / totalDuration) * 100;
+            progressFill.style.width = `${pct}%`;
+            
+            // Format time
+            document.getElementById('elapsedTime').innerText = formatTime(currentSeconds);
+        }
+
+        function formatTime(sec) {
+            let hrs = Math.floor(sec / 3600);
+            let mins = Math.floor((sec % 3600) / 60);
+            let secs = sec % 60;
+            return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function togglePlay() {
+            beepSound();
+            if (isPlaying) {
+                isPlaying = false;
+                document.getElementById('playPauseBtn').innerText = '▶';
+                clearInterval(playTimer);
+                cancelAnimationFrame(animationFrameId);
+            } else {
+                if (document.getElementById('playbackScreen').classList.contains('active')) {
+                    startPlayLoop();
+                    drawSpace();
+                } else {
+                    playMovie();
+                }
+            }
+        }
+
+        function stopPlayback() {
+            selectSound();
+            isPlaying = false;
+            clearInterval(playTimer);
+            cancelAnimationFrame(animationFrameId);
+            currentSeconds = 0;
+            updateTimelineDisplay();
+            document.getElementById('playPauseBtn').innerText = '▶';
+            
+            // Return to menu
+            document.getElementById('playbackScreen').classList.remove('active');
+            document.getElementById('crawlContainer').style.display = 'none';
+            document.getElementById('mainMenuContainer').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('mainMenuContainer').style.opacity = '1';
+            }, 100);
+        }
+
+        function stepForward() {
+            beepSound();
+            currentSeconds = Math.min(totalDuration, currentSeconds + 120); // forward 2 mins
+            updateTimelineDisplay();
+        }
+
+        function stepBack() {
+            beepSound();
+            currentSeconds = Math.max(0, currentSeconds - 120); // back 2 mins
+            updateTimelineDisplay();
+        }
+
+        function seekVideo(event) {
+            beepSound();
+            const rect = event.currentTarget.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const pct = clickX / rect.width;
+            currentSeconds = Math.floor(pct * totalDuration);
+            updateTimelineDisplay();
+        }
+
+        function changeVolume(val) {
+            // Simulated volume slide
+        }
+
+        function resetState() {
+            stopPlayback();
+            const allPanels = document.querySelectorAll('.submenu-panel');
+            allPanels.forEach(panel => panel.classList.remove('active'));
+            const items = document.querySelectorAll('.menu-item');
+            items.forEach((item, index) => {
+                if (index === 0) item.classList.add('active');
+                else item.classList.remove('active');
+            });
+            activeSubmenu = null;
+        }
+    </script>
+</body>
+</html>
