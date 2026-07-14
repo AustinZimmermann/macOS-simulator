@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Blu-ray Player - Star Wars: Episode VI</title>
+    <style>
+        :root {
+            --mac-bg: #1e1e1e;
+            --mac-titlebar: #3a3a3a;
+            --mac-text: #e0e0e0;
+            --mac-text-dim: #999999;
+            --sw-gold: #ffe81f;
+            --sw-blue: #00d2ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0c0c0c;
+            color: var(--mac-text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* macOS Player Window Window Frame */
+        .player-window {
+            width: 1024px;
+            height: 640px;
+            background-color: var(--mac-bg);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+            border: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Titlebar styling */
+        .titlebar {
+            background-color: var(--mac-titlebar);
+            height: 38px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            position: relative;
+            border-bottom: 1px solid #282828;
+        }
+
+        .mac-buttons {
+            display: flex;
+            gap: 8px;
+            position: absolute;
+            left: 16px;
+        }
+
+        .mac-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .btn-close { background-color: #ff5f56; }
+        .btn-minimize { background-color: #ffbd2e; }
+        .btn-zoom { background-color: #27c93f; }
+
+        .window-title {
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+            color: #ccc;
+            font-weight: 500;
+        }
+
+        /* Video / Disc Canvas Area */
+        .screen-container {
+            flex: 1;
+            background-color: #000;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #starfield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Interactive BD-J / Menu layer */
+        .menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 60px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.7) 100%);
+        }
+
+        .disc-header {
+            text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+        }
+
+        .disc-header h1 {
+            font-size: 22px;
+            letter-spacing: 4px;
+            color: var(--sw-gold);
+            font-family: 'Arial Black', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .disc-header p {
+            font-size: 12px;
+            color: var(--mac-text-dim);
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+        /* Center Dynamic Content Simulation Panel */
+        .center-display {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 20px 0;
+        }
+
+        .panel-content {
+            background: rgba(10, 15, 25, 0.85);
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            border-radius: 8px;
+            width: 80%;
+            height: 80%;
+            padding: 20px;
+            display: none;
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .panel-content.active {
+            display: block;
+        }
+
+        .panel-content h2 {
+            font-size: 18px;
+            color: var(--sw-blue);
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 210, 255, 0.2);
+            padding-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Lists and UI items inside BD-J interface */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .menu-list-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            font-size: 14px;
+        }
+
+        .menu-list-item:hover {
+            background: rgba(0, 210, 255, 0.15);
+            border-left-color: var(--sw-blue);
+            padding-left: 20px;
+        }
+
+        .menu-list-item.selected {
+            background: rgba(255, 232, 31, 0.1);
+            border-left-color: var(--sw-gold);
+        }
+
+        /* Bottom primary navigation bar matching 2011 UI style */
+        .bottom-nav {
+            display: flex;
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 4px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            align-self: center;
+            z-index: 10;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            color: #fff;
+            background: linear-gradient(180deg, #2a2a2a, #151515);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.4);
+        }
+        
+        .nav-btn.active {
+            color: var(--sw-gold);
+        }
+
+        /* Player Native OS Controls Overlay bottom bar */
+        .player-controls {
+            height: 52px;
+            background-color: var(--mac-titlebar);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-top: 1px solid #282828;
+            z-index: 5;
+        }
+
+        .playback-buttons {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .control-icon {
+            color: #bbb;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .control-icon:hover { color: #fff; }
+
+        .progress-container {
+            flex: 1;
+            margin: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--mac-text-dim);
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: var(--sw-blue);
+            border-radius: 3px;
+        }
+
+        /* Notifications & OSD */
+        .osd-alert {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: rgba(20, 20, 20, 0.9);
+            border-left: 4px solid var(--sw-gold);
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateX(30px);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .osd-alert.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="player-window">
+        <div class="titlebar">
+            <div class="mac-buttons">
+                <div class="mac-btn btn-close"></div>
+                <div class="mac-btn btn-minimize"></div>
+                <div class="mac-btn btn-zoom"></div>
+            </div>
+            <div class="window-title">Blu-ray Player - RETURN_OF_THE_JEDI (BD-50, AVC)</div>
+        </div>
+
+        <div class="screen-container">
+            <canvas id="starfield"></canvas>
+
+            <div id="osdAlert" class="osd-alert">Audio-Spur gewechselt</div>
+
+            <div class="menu-overlay">
+                <div class="disc-header">
+                    <h1>Star Wars: Episode VI</h1>
+                    <p>Die Rückkehr der Jedi-Ritter &bull; 1983 / 2005</p>
+                </div>
+
+                <div class="center-display">
+                    
+                    <div id="panel-film" class="panel-content active">
+                        <h2>Hauptfilm starten</h2>
+                        <div class="menu-list-item" onclick="triggerPlayback('Film', '134 Min')">
+                            <strong>Film abspielen</strong><br>
+                            <span style="font-size:12px; color:var(--mac-text-dim);">Startet die digital restaurierte Fassung mit 6.1 DTS-HD Master Audio</span>
+                        </div>
+                    </div>
+
+                    <div id="panel-kapitel" class="panel-content">
+                        <h2>Kapitelauswahl</h2>
+                        <div class="menu-grid">
+                            <div class="menu-list-item" onclick="triggerPlayback('Kapitel 1', 'Vaders Ankunft')">1. Vaders Ankunft</div>
+                            <div class="menu-list-item" onclick="triggerPlayback('Kapitel 5', 'In Jabbas Palast')">5. In Jabbas Palast</div>
+                            <div class="menu-list-item" onclick="triggerPlayback('Kapitel 12', 'Yodas Vermächtnis')">12. Yodas Vermächtnis</div>
+                            <div class="menu-list-item" onclick="triggerPlayback('Kapitel 18', 'Die Schlacht von Endor')">18. Die Schlacht von Endor</div>
+                            <div class="menu-list-item" onclick="triggerPlayback('Kapitel 24', 'Vaders Erlösung')">24. Vaders Erlösung</div>
+                            <div class="menu-list-item" onclick="triggerPlayback('Kapitel 28', 'Feier im ganzen Universum')">28. Feier im ganzen Universum</div>
+                        </div>
+                    </div>
+
+                    <div id="panel-audio" class="panel-content">
+                        <h2>Sprachkonfiguration (Audio)</h2>
+                        <div class="menu-list-item selected" onclick="setAudio('Deutsch DTS-HD HR 6.1')">Deutsch DTS-HD High Resolution 6.1</div>
+                        <div class="menu-list-item" style="margin-top:8px;" onclick="setAudio('English DTS-HD MA 6.1')">English DTS-HD Master Audio 6.1</div>
+                        <div class="menu-list-item" style="margin-top:8px;" onclick="setAudio('Audio-Kommentar (George Lucas)')">Audio-Kommentar mit George Lucas & Crew</div>
+                    </div>
+
+                    <div id="panel-extras" class="panel-content">
+                        <h2>Bonusmaterial (Disc 6 Archiv)</h2>
+                        <div class="menu-grid">
+                            <div class="menu-list-item" onclick="triggerPlayback('Bonus', 'Vaders Ankunft - Alternative Fassung')">Vaders Ankunft & Kontaktaufnahme (Entfernte Szene)</div>
+                            <div class="menu-list-item" onclick="triggerPlayback('Bonus', 'Sandsturm auf Tatooine')">Der Sandsturm auf Tatooine (Entfernte Szene)</div>
+                            <div class="menu-list-item" onclick="triggerPlayback('Bonus', 'Rebellen-Angriff auf den Bunker')">Rebellen-Angriff auf den Bunker</div>
+                            <div class="menu-list-item" onclick="triggerPlayback('Bonus', 'Jerjerrods Konflikt')">Moff Jerjerrods Konflikt</div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="bottom-nav">
+                    <button class="nav-btn active" onclick="switchTab('film')">Hauptfilm</button>
+                    <button class="nav-btn" onclick="switchTab('kapitel')">Kapitel</button>
+                    <button class="nav-btn" onclick="switchTab('audio')">Tonspuren</button>
+                    <button class="nav-btn" onclick="switchTab('extras')">Extras</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="player-controls">
+            <div class="playback-buttons">
+                <span class="control-icon" onclick="showAlert('⏮ Vorheriges Kapitel')">⏮</span>
+                <span class="control-icon" id="playPauseBtn" onclick="togglePlayState()" style="font-size: 18px;">▶</span>
+                <span class="control-icon" onclick="showAlert('⏭ Nächstes Kapitel')">⏭</span>
+            </div>
+            <div class="progress-container">
+                <span id="currentTime">00:00:00</span>
+                <div class="progress-bar" onclick="seekVideo(event)">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <span id="totalTime">02:14:46</span>
+            </div>
+            <div style="font-size: 12px; color: var(--mac-text-dim);">
+                1080p | AVC
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Starfield Canvas Animation Setup
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        let isPlaying = false;
+        let timeTicker = null;
+        let currentSeconds = 0;
+        const totalSeconds = 8086; // 2h 14m 46s
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Populate Star Structs
+        for (let i = 0; i < 120; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1.5 + 0.5,
+                speed: Math.random() * 0.4 + 0.1
+            });
+        }
+
+        function animateStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // standard movement logic simulation
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+            requestAnimationFrame(animateStars);
+        }
+        animateStars();
+
+        // Menu Tab Controller logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.panel-content').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(`panel-${tabId}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // On-Screen Notification Manager
+        function showAlert(text) {
+            const osd = document.getElementById('osdAlert');
+            osd.innerText = text;
+            osd.classList.add('show');
+            setTimeout(() => osd.classList.remove('show'), 2500);
+        }
+
+        // Configuration switch callbacks
+        function setAudio(trackName) {
+            document.querySelectorAll('#panel-audio .menu-list-item').forEach(item => item.classList.remove('selected'));
+            event.target.classList.add('selected');
+            showAlert(`Audio gesetzt: ${trackName}`);
+        }
+
+        function triggerPlayback(type, desc) {
+            showAlert(`Lade ${type}: ${desc}...`);
+            currentSeconds = 0;
+            if(!isPlaying) togglePlayState();
+        }
+
+        // Native Playback Loop Emulation
+        function togglePlayState() {
+            const btn = document.getElementById('playPauseBtn');
+            if (isPlaying) {
+                isPlaying = false;
+                btn.innerText = '▶';
+                clearInterval(timeTicker);
+            } else {
+                isPlaying = true;
+                btn.innerText = '⏸';
+                timeTicker = setInterval(updatePlaybackProgress, 1000);
+            }
+        }
+
+        function updatePlaybackProgress() {
+            if(currentSeconds < totalSeconds) {
+                currentSeconds++;
+                formatTimeDisplay();
+            } else {
+                togglePlayState();
+            }
+        }
+
+        function formatTimeDisplay() {
+            const format = (s) => String(Math.floor(s)).padStart(2, '0');
+            const hrs = currentSeconds / 3600;
+            const mins = (currentSeconds % 3600) / 60;
+            const secs = currentSeconds % 60;
+            
+            document.getElementById('currentTime').innerText = `${format(hrs)}:${format(mins)}:${format(secs)}`;
+            document.getElementById('progressFill').style.width = `${(currentSeconds / totalSeconds) * 100}%`;
+        }
+
+        function seekVideo(e) {
+            const rect = e.target.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const percentage = clickX / rect.width;
+            currentSeconds = Math.floor(percentage * totalSeconds);
+            formatTimeDisplay();
+        }
+    </script>
+</body>
+</html>
