@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Blu-ray Player - Star Wars: Das Imperium schlägt zurück</title>
+    <style>
+        :root {
+            --mac-bg: #1e1e1e;
+            --mac-title-bg: #2d2d2d;
+            --mac-text: #e3e3e3;
+            --mac-dim: #888888;
+            --sw-blue: #00d2ff;
+            --sw-gold: #ffe81f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background: #0b0c10;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            color: var(--mac-text);
+        }
+
+        /* macOS Window Styling */
+        .mac-window {
+            width: 1024px;
+            height: 640px;
+            background: var(--mac-bg);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+            border: 1px solid #3a3a3a;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Window Header Bar */
+        .title-bar {
+            background: var(--mac-title-bg);
+            height: 38px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 1px solid #1a1a1a;
+            position: relative;
+            z-index: 10;
+        }
+
+        .window-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .btn-close { background: #ff5f56; }
+        .btn-minimize { background: #ffbd2e; }
+        .btn-maximize { background: #27c93f; }
+
+        .window-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: var(--mac-dim);
+            font-weight: 400;
+        }
+
+        .disc-info-badge {
+            margin-left: auto;
+            font-size: 11px;
+            background: #3d3d3d;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--sw-blue);
+            font-family: monospace;
+        }
+
+        /* Screen & Playback Area */
+        .player-viewport {
+            flex: 1;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Simulated Content Contexts */
+        .video-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            transition: filter 0.5s ease;
+        }
+
+        /* Menu Context State Backgrounds */
+        .state-menu {
+            background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?auto=format&fit=crop&w=1024&q=80'); /* Space replacement background */
+        }
+
+        /* Dynamic Title Card Overlay */
+        .menu-overlay {
+            position: absolute;
+            bottom: 40px;
+            left: 50px;
+            right: 50px;
+            display: flex;
+            flex-direction: column;
+            z-index: 5;
+        }
+
+        .disc-title {
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            font-size: 28px;
+            letter-spacing: 1px;
+            color: #fff;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        }
+
+        .disc-subtitle {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--sw-gold);
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        }
+
+        /* Blu-ray BD-Java Style Main Menu Navigation */
+        .bd-nav {
+            display: flex;
+            gap: 25px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 15px;
+        }
+
+        .nav-item {
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--sw-blue);
+            text-shadow: 0 0 10px rgba(0,210,255,0.6);
+        }
+
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--sw-blue);
+            box-shadow: 0 0 8px var(--sw-blue);
+        }
+
+        /* Submenus */
+        .submenu-panel {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+            gap: 30px;
+            backdrop-filter: blur(5px);
+        }
+
+        .submenu-column h4 {
+            font-size: 11px;
+            color: var(--sw-gold);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .submenu-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .submenu-list li {
+            font-size: 13px;
+            color: #bbb;
+            cursor: pointer;
+        }
+
+        .submenu-list li:hover, .submenu-list li.selected {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* Movie Playback Simulation View */
+        .movie-playback {
+            display: none;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            position: relative;
+        }
+
+        .cinemascope-content {
+            width: 100%;
+            height: 75%; /* 2.35:1 aspect ratio emulation */
+            background: #111;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 12.5%;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+        }
+
+        .crawl-text {
+            color: var(--sw-gold);
+            font-weight: bold;
+            text-align: justify;
+            width: 60%;
+            line-height: 1.6;
+            font-size: 20px;
+            transform: perspective(300px) rotateX(25deg);
+            animation: scrollCrawl 40s linear infinite;
+            display: none;
+        }
+
+        @keyframes scrollCrawl {
+            0% { transform: perspective(300px) rotateX(25deg) translateY(400px); opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: perspective(300px) rotateX(25deg) translateY(-600px); opacity: 0; }
+        }
+
+        .scene-placeholder {
+            font-size: 24px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #444;
+            display: none;
+        }
+
+        /* macOS Player Controls */
+        .os-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 30, 30, 0.85);
+            border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(20px);
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .player-viewport:hover .os-controls, .os-controls:hover {
+            opacity: 1;
+        }
+
+        .ctrl-btn {
+            background: none;
+            border: none;
+            color: var(--mac-text);
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 320px;
+            font-size: 11px;
+            color: var(--mac-dim);
+            font-family: monospace;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 4px;
+            background: #444;
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--sw-blue);
+            border-radius: 2px;
+        }
+
+        .audio-badge {
+            font-size: 10px;
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mac-window">
+        <div class="title-bar">
+            <div class="window-buttons">
+                <span class="btn btn-close"></span>
+                <span class="btn btn-minimize"></span>
+                <span class="btn btn-maximize"></span>
+            </div>
+            <div class="window-title">Blu-ray Player - Star Wars: Episode V</div>
+            <div class="disc-info-badge">BD-50 | AVC | 1080p</div>
+        </div>
+
+        <div class="player-viewport">
+            
+            <div id="menuContext" class="video-layer state-menu">
+                <div class="menu-overlay">
+                    <div class="disc-title">STAR WARS</div>
+                    <div class="disc-subtitle">Das Imperium schlägt zurück</div>
+                    
+                    <nav class="bd-nav">
+                        <div class="nav-item" onclick="playMovie()">Film Abspielen</div>
+                        <div class="nav-item" onclick="toggleSubmenu('chapters')">Kapitelauswahl</div>
+                        <div class="nav-item" onclick="toggleSubmenu('audio')">Einstellungen</div>
+                    </nav>
+
+                    <div id="chaptersSubmenu" class="submenu-panel">
+                        <div class="submenu-column">
+                            <h4>Kapitel wählen</h4>
+                            <ul class="submenu-list">
+                                <li onclick="jumpToChapter(1, '00:00:00', 'Flucht vom Eisplaneten Hoth')">1. Flucht vom Eisplaneten Hoth</li>
+                                <li onclick="jumpToChapter(2, '00:32:15', 'Yodas Lehren im Dagobah-System')">2. Yodas Lehren im Dagobah-System</li>
+                                <li onclick="jumpToChapter(3, '01:05:40', 'Der Asteroiden-Gürtel')">3. Der Asteroiden-Gürtel</li>
+                                <li onclick="jumpToChapter(4, '01:42:10', 'Verrat in der Wolkenstadt')">4. Verrat in der Wolkenstadt</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div id="audioSubmenu" class="submenu-panel">
+                        <div class="submenu-column">
+                            <h4>Audio</h4>
+                            <ul class="submenu-list">
+                                <li id="aud-de" class="selected" onclick="setAudio('de')">Deutsch DTS 5.1</li>
+                                <li id="aud-en" onclick="setAudio('en')">Englisch DTS-HD MA 6.1</li>
+                            </ul>
+                        </div>
+                        <div class="submenu-column">
+                            <h4>Untertitel</h4>
+                            <ul class="submenu-list">
+                                <li id="sub-off" class="selected" onclick="setSubtitle('off')">Aus</li>
+                                <li id="sub-de" onclick="setSubtitle('de')">Deutsch</li>
+                                <li id="sub-en" onclick="setSubtitle('en')">Englisch</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="movieContext" class="movie-playback">
+                <div class="cinemascope-content">
+                    <div id="crawlText" class="crawl-text">
+                        Episode V<br><br>
+                        DAS IMPERIUM SCHLÄGT ZURÜCK<br><br>
+                        Es sind harte Zeiten für die Rebellion. Obwohl der Todesstern vernichtet worden ist, haben die imperialen Truppen die Rebellen aus ihrem geheimen Stützpunkt vertrieben und jagen sie quer durch die Galaxis....
+                    </div>
+                    <div id="scenePlaceholder" class="scene-placeholder">
+                        [ Filmszene wird abgespielt ]
+                    </div>
+                </div>
+            </div>
+
+            <div class="os-controls">
+                <button class="ctrl-btn" onclick="returnToMenu()">Menu</button>
+                <button class="ctrl-btn" id="playPauseBtn" onclick="togglePlay()">⏸</button>
+                <div class="progress-container">
+                    <span id="currentTime">00:00:00</span>
+                    <div class="progress-bar" onclick="seekVideo(event)">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span id="totalTime">02:04:18</span>
+                </div>
+                <div class="audio-badge" id="currentAudioIndicator">DE DTS 5.1</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let isPlaying = false;
+        let playInterval;
+        let seconds = 0;
+        let currentAudio = "DE DTS 5.1";
+
+        function toggleSubmenu(menu) {
+            document.getElementById('chaptersSubmenu').style.display = 'none';
+            document.getElementById('audioSubmenu').style.display = 'none';
+            
+            if (menu === 'chapters') {
+                document.getElementById('chaptersSubmenu').style.display = 'flex';
+            } else if (menu === 'audio') {
+                document.getElementById('audioSubmenu').style.display = 'flex';
+            }
+        }
+
+        function setAudio(lang) {
+            document.getElementById('aud-de').classList.remove('selected');
+            document.getElementById('aud-en').classList.remove('selected');
+            if (lang === 'de') {
+                document.getElementById('aud-de').classList.add('selected');
+                currentAudio = "DE DTS 5.1";
+            } else {
+                document.getElementById('aud-en').classList.add('selected');
+                currentAudio = "EN DTS-HD 6.1";
+            }
+            document.getElementById('currentAudioIndicator').innerText = currentAudio;
+        }
+
+        function setSubtitle(sub) {
+            document.getElementById('sub-off').classList.remove('selected');
+            document.getElementById('sub-de').classList.remove('selected');
+            document.getElementById('sub-en').classList.remove('selected');
+            document.getElementById('sub-' + sub).classList.add('selected');
+        }
+
+        function playMovie() {
+            document.getElementById('menuContext').style.display = 'none';
+            document.getElementById('movieContext').style.display = 'block';
+            document.getElementById('crawlText').style.display = 'block';
+            document.getElementById('scenePlaceholder').style.display = 'none';
+            startTimeline(0);
+        }
+
+        function jumpToChapter(chapterNum, timestamp, label) {
+            document.getElementById('menuContext').style.display = 'none';
+            document.getElementById('movieContext').style.display = 'block';
+            document.getElementById('crawlText').style.display = 'none';
+            
+            const placeholder = document.getElementById('scenePlaceholder');
+            placeholder.innerText = `Kapitel ${chapterNum}: ${label}`;
+            placeholder.style.display = 'block';
+
+            let parts = timestamp.split(':');
+            let initialSecs = parseInt(parts[0])*3600 + parseInt(parts[1])*60 + parseInt(parts[2]);
+            startTimeline(initialSecs);
+        }
+
+        function returnToMenu() {
+            clearInterval(playInterval);
+            isPlaying = false;
+            document.getElementById('playPauseBtn').innerText = "▶";
+            document.getElementById('movieContext').style.display = 'none';
+            document.getElementById('menuContext').style.display = 'block';
+        }
+
+        function startTimeline(startSecs) {
+            clearInterval(playInterval);
+            seconds = startSecs;
+            isPlaying = true;
+            document.getElementById('playPauseBtn').innerText = "⏸";
+            
+            playInterval = setInterval(() => {
+                if (isPlaying) {
+                    seconds++;
+                    if(seconds > 20 && document.getElementById('crawlText').style.display === 'block') {
+                        document.getElementById('crawlText').style.display = 'none';
+                        document.getElementById('scenePlaceholder').innerText = "[ Filmszene wird abgespielt ]";
+                        document.getElementById('scenePlaceholder').style.display = 'block';
+                    }
+                    updateTimelineUI();
+                }
+            }, 1000);
+        }
+
+        function togglePlay() {
+            if(document.getElementById('movieContext').style.display === 'none') {
+                playMovie();
+                return;
+            }
+            isPlaying = !isPlaying;
+            document.getElementById('playPauseBtn').innerText = isPlaying ? "⏸" : "▶";
+        }
+
+        function updateTimelineUI() {
+            let h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            let m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            let s = (seconds % 60).toString().padStart(2, '0');
+            document.getElementById('currentTime').innerText = `${h}:${m}:${s}`;
+            
+            let totalSecs = 2*3600 + 4*60 + 18;
+            let percent = (seconds / totalSecs) * 100;
+            document.getElementById('progressFill').style.width = `${percent}%`;
+        }
+
+        function seekVideo(event) {
+            let rect = event.target.getBoundingClientRect();
+            if (event.target.className === 'progress-fill') {
+                rect = event.target.parentElement.getBoundingClientRect();
+            }
+            let x = event.clientX - rect.left;
+            let percent = x / rect.width;
+            let totalSecs = 2*3600 + 4*60 + 18;
+            seconds = Math.floor(percent * totalSecs);
+            updateTimelineUI();
+            if(!isPlaying) togglePlay();
+        }
+    </script>
+</body>
+</html>
