@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS シミュレータ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="menu-bar">
+        <div class="menu-left">
+            <span class="apple-logo"></span>
+            <span class="menu-item bold">Finder</span>
+            <span class="menu-item">ファイル</span>
+            <span class="menu-item">編集</span>
+            <span class="menu-item">表示</span>
+            <span class="menu-item">移動</span>
+            <span class="menu-item">ウィンドウ</span>
+            <span class="menu-item">ヘルプ</span>
+        </div>
+        <div class="menu-right">
+            <span id="battery" class="menu-item">🔋 100%</span>
+            <span id="wifi" class="menu-item">📶</span>
+            <span id="clock" class="menu-item">00:00:00</span>
+        </div>
+    </header>
+
+    <main class="desktop">
+        
+        <div class="desktop-icon" onclick="openWindow('finder-win')">
+            <span class="icon-emoji">📁</span>
+            <span class="icon-label">Macintosh HD</span>
+        </div>
+        <div class="desktop-icon" onclick="openWindow('notes-win')">
+            <span class="icon-emoji">📝</span>
+            <span class="icon-label">メモ</span>
+        </div>
+
+        <div id="finder-win" class="window" style="top: 100px; left: 100px;">
+            <div class="window-header" onmousedown="dragStart(event, 'finder-win')">
+                <div class="window-controls">
+                    <span class="ctrl close" onclick="closeWindow('finder-win')"></span>
+                    <span class="ctrl minimize" onclick="minimizeWindow('finder-win')"></span>
+                    <span class="ctrl maximize" onclick="toggleMaximize('finder-win')"></span>
+                </div>
+                <span class="window-title">Finder</span>
+            </div>
+            <div class="window-content finder-layout">
+                <aside class="sidebar">
+                    <p class="sidebar-title">お気に入り</p>
+                    <ul>
+                        <li class="active">🏠 ホーム</li>
+                        <li>📥 ダウンロード</li>
+                        <li>📄 書類</li>
+                        <li>🖼️ ピクチャ</li>
+                    </ul>
+                </aside>
+                <section class="finder-main">
+                    <div class="file-item">
+                        <span class="file-icon">📁</span>
+                        <span class="file-name">プロジェクト</span>
+                    </div>
+                    <div class="file-item">
+                        <span class="file-icon">📁</span>
+                        <span class="file-name">写真</span>
+                    </div>
+                    <div class="file-item">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">readme.txt</span>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <div id="notes-win" class="window" style="top: 150px; left: 300px; display: none;">
+            <div class="window-header" onmousedown="dragStart(event, 'notes-win')">
+                <div class="window-controls">
+                    <span class="ctrl close" onclick="closeWindow('notes-win')"></span>
+                    <span class="ctrl minimize" onclick="minimizeWindow('notes-win')"></span>
+                    <span class="ctrl maximize" onclick="toggleMaximize('notes-win')"></span>
+                </div>
+                <span class="window-title">メモ</span>
+            </div>
+            <div class="window-content">
+                <textarea class="notes-area" placeholder="ここにメモを入力してください..."></textarea>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="dock-container">
+        <div class="dock">
+            <div class="dock-item" onclick="openWindow('finder-win')" title="Finder">
+                <span class="dock-icon">🌐</span>
+                <span class="dock-dot"></span>
+            </div>
+            <div class="dock-item" onclick="openWindow('notes-win')" title="メモ">
+                <span class="dock-icon">📝</span>
+                <span class="dock-dot"></span>
+            </div>
+            <div class="dock-item" onclick="alert('Safariは準備中です！')" title="Safari">
+                <span class="dock-icon">🧭</span>
+            </div>
+            <div class="dock-item" onclick="alert('システム設定は準備中です！')" title="システム設定">
+                <span class="dock-icon">⚙️</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
