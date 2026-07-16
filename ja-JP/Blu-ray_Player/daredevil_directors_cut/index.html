@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mac BD Player - デアデビル (ディレクターズ・カット)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="mac-window">
+    <div class="title-bar">
+        <div class="traffic-lights">
+            <span class="close"></span>
+            <span class="minimize"></span>
+            <span class="maximize"></span>
+        </div>
+        <div class="window-title">Mac BD Player Pro - BD-50 (AVC)</div>
+    </div>
+
+    <div class="screen-container">
+        
+        <div id="video-player" class="hidden">
+            <div class="city-rain-bg">
+                <div class="rain"></div>
+                <div class="dd-silhouette"></div>
+                <div class="video-overlay-text">本編再生中... (1080p AVC / 2.35:1 CinemaScope)</div>
+            </div>
+            
+            <div id="popup-menu" class="hidden">
+                <div class="popup-title">ポップアップメニュー</div>
+                <ul class="popup-options">
+                    <li onclick="returnToMainMenu()">メインメニューへ戻る</li>
+                    <li onclick="toggleAudioSubtitles()">音声・字幕切替</li>
+                    <li onclick="closePopupMenu()">閉じる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="bd-main-menu" class="active">
+            <div class="menu-background">
+                <div class="fog"></div>
+                <div class="overlay"></div>
+                <div class="hero-graphic">
+                    <h1 class="movie-title">デアデビル</h1>
+                    <p class="directors-cut">ディレクターズ・カット</p>
+                    <span class="spec-tag">BD-50 AVC | DTS-HD Master Audio</span>
+                </div>
+
+                <div class="bd-nav">
+                    <ul>
+                        <li class="nav-item active" onclick="startMovie()">本編再生 (PLAY MOVIE)</li>
+                        <li class="nav-item" onclick="openMenuSection('chapters')">チャプター選択 (SCENE SELECTION)</li>
+                        <li class="nav-item" onclick="openMenuSection('audio-setup')">音声・字幕設定 (AUDIO / SUBTITLES)</li>
+                        <li class="nav-item" onclick="openMenuSection('bonus')">特典映像 (SPECIAL FEATURES)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="menu-overlay" class="menu-overlay hidden">
+                <button class="back-btn" onclick="closeMenuSection()">戻る (BACK)</button>
+                
+                <div id="sec-chapters" class="submenu-content hidden">
+                    <h2>チャプター選択</h2>
+                    <div class="chapter-grid">
+                        <div class="chapter-card" onclick="startMovieAt(1)">
+                            <div class="ch-thumb thumb1"></div>
+                            <span>1. 救世主の影</span>
+                        </div>
+                        <div class="chapter-card" onclick="startMovieAt(15)">
+                            <div class="ch-thumb thumb2"></div>
+                            <span>2. 地獄の台所 (ヘルズ・キッチン)</span>
+                        </div>
+                        <div class="chapter-card" onclick="startMovieAt(45)">
+                            <div class="ch-thumb thumb3"></div>
+                            <span>3. 葬儀での再会</span>
+                        </div>
+                        <div class="chapter-card" onclick="startMovieAt(90)">
+                            <div class="ch-thumb thumb4"></div>
+                            <span>4. 正義の代償</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sec-audio-setup" class="submenu-content hidden">
+                    <h2>音声・字幕設定</h2>
+                    <div class="setup-columns">
+                        <div class="setup-col">
+                            <h3>音声 (AUDIO)</h3>
+                            <label><input type="radio" name="audio" value="en-dts" checked> 英語 DTS-HD Master Audio 5.1ch</label>
+                            <label><input type="radio" name="audio" value="ja-dts"> 日本語吹替 DTS 5.1ch</label>
+                            <label><input type="radio" name="audio" value="commentary"> 音声解説 (監督 マーク・スティーヴン・ジョンソン)</label>
+                        </div>
+                        <div class="setup-col">
+                            <h3>字幕 (SUBTITLES)</h3>
+                            <label><input type="radio" name="subs" value="ja" checked> 日本語字幕</label>
+                            <label><input type="radio" name="subs" value="en"> 英語字幕</label>
+                            <label><input type="radio" name="subs" value="ja-commentary"> コメンタリー用日本語字幕</label>
+                            <label><input type="radio" name="subs" value="off"> 字幕オフ</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sec-bonus" class="submenu-content hidden">
+                    <h2>特別収録特典</h2>
+                    <ul class="bonus-list">
+                        <li>▶ マン・ウィズアウト・フィア：メイキング・オブ・「デアデビル」 (HD)</li>
+                        <li>▶ シャドウ・ワールド：プロダクションデザイン解説</li>
+                        <li>▶ ミュージック・ビデオ: “Bring Me To Life” by Evanescence</li>
+                        <li>▶ オリジナル劇場予告編集</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="player-controls">
+        <div class="control-btn" id="play-pause-btn" onclick="togglePlay()">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" id="play-icon"/></svg>
+        </div>
+        <div class="timeline-container">
+            <span class="time-display" id="current-time">00:00:00</span>
+            <div class="progress-bar" id="progress-bar-container" onclick="seek(event)">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <span class="time-display" id="total-time">02:13:00</span>
+        </div>
+        <div class="control-btn" id="popup-btn" onclick="togglePopupMenu()">
+            <span>POP-UP MENU</span>
+        </div>
+        <div class="volume-container">
+            <span>🔊</span>
+            <input type="range" min="0" max="100" value="80" class="volume-slider">
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

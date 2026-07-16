@@ -1,0 +1,491 @@
+:root {
+    --mac-dark: #1e1e1e;
+    --mac-border: #3c3c3c;
+    --dd-red: #d31d24;
+    --dd-dark-red: #66060a;
+    --glass: rgba(30, 30, 30, 0.75);
+}
+
+body {
+    background-color: #0d0d0d;
+    background-image: radial-gradient(circle, #2a0b0d 0%, #050505 100%);
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* macOS Window wrapper */
+.mac-window {
+    width: 960px;
+    height: 600px;
+    background-color: var(--mac-dark);
+    border-radius: 12px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--mac-border);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* macOS Title Bar */
+.title-bar {
+    height: 38px;
+    background: linear-gradient(to bottom, #303030, #252525);
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    border-bottom: 1px solid #151515;
+    user-select: none;
+}
+
+.traffic-lights {
+    display: flex;
+    gap: 8px;
+}
+
+.traffic-lights span {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.close { background-color: #ff5f56; }
+.minimize { background-color: #ffbd2e; }
+.maximize { background-color: #27c93f; }
+
+.window-title {
+    flex-grow: 1;
+    text-align: center;
+    font-size: 13px;
+    color: #b3b3b3;
+    padding-right: 50px;
+}
+
+/* Virtual Screen */
+.screen-container {
+    flex-grow: 1;
+    position: relative;
+    background-color: #000;
+    overflow: hidden;
+}
+
+/* BD Main Menu Design */
+#bd-main-menu {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.menu-background {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, #3a0003 0%, #020202 100%);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 40px 60px;
+    box-sizing: border-box;
+}
+
+/* Dynamic fog effects */
+.fog {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(211, 29, 36, 0.15) 0%, transparent 60%);
+    animation: fogMove 20s infinite alternate linear;
+    pointer-events: none;
+}
+
+@keyframes fogMove {
+    0% { transform: translate(-25%, -25%) scale(1); }
+    100% { transform: translate(10%, 10%) scale(1.2); }
+}
+
+.hero-graphic {
+    margin-bottom: 30px;
+    z-index: 2;
+}
+
+.movie-title {
+    font-size: 56px;
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #fff;
+    text-shadow: 0 0 15px var(--dd-red), 2px 2px 5px #000;
+}
+
+.directors-cut {
+    font-size: 18px;
+    color: var(--dd-red);
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    margin: 5px 0 0 5px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000;
+}
+
+.spec-tag {
+    font-size: 10px;
+    color: #888;
+    border: 1px solid #444;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+/* Navigation items */
+.bd-nav {
+    z-index: 10;
+}
+
+.bd-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    font-size: 15px;
+    margin: 12px 0;
+    cursor: pointer;
+    color: #b3b3b3;
+    transition: all 0.2s ease;
+    width: fit-content;
+    text-shadow: 1px 1px 3px #000;
+}
+
+.nav-item:hover, .nav-item.active {
+    color: #fff;
+    transform: translateX(10px);
+    text-shadow: 0 0 8px var(--dd-red);
+}
+
+.nav-item:hover::before, .nav-item.active::before {
+    content: "▲ ";
+    color: var(--dd-red);
+    font-size: 11px;
+}
+
+/* Submenu Overlays */
+.menu-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 10, 0.95);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 50px;
+    box-sizing: border-box;
+}
+
+.back-btn {
+    position: absolute;
+    top: 30px;
+    left: 40px;
+    background: transparent;
+    border: 1px solid var(--dd-red);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.back-btn:hover {
+    background-color: var(--dd-red);
+}
+
+.submenu-content {
+    width: 80%;
+}
+
+.submenu-content h2 {
+    color: var(--dd-red);
+    border-bottom: 2px solid var(--dd-dark-red);
+    padding-bottom: 10px;
+}
+
+/* Chapters Grid */
+.chapter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.chapter-card {
+    cursor: pointer;
+    text-align: center;
+}
+
+.ch-thumb {
+    height: 90px;
+    border: 1px solid #333;
+    background-color: #222;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    transition: 0.2s;
+}
+
+.chapter-card:hover .ch-thumb {
+    border-color: var(--dd-red);
+    transform: scale(1.05);
+}
+
+.thumb1 { background: linear-gradient(45deg, #111, #441011); }
+.thumb2 { background: linear-gradient(45deg, #111, #151044); }
+.thumb3 { background: linear-gradient(45deg, #111, #254410); }
+.thumb4 { background: linear-gradient(45deg, #111, #44103f); }
+
+/* Audio setup selections */
+.setup-columns {
+    display: flex;
+    gap: 40px;
+    margin-top: 20px;
+}
+
+.setup-col {
+    flex: 1;
+}
+
+.setup-col h3 {
+    color: #aaa;
+    font-size: 14px;
+}
+
+.setup-col label {
+    display: block;
+    margin: 15px 0;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* Bonus List */
+.bonus-list {
+    list-style: none;
+    padding: 0;
+}
+
+.bonus-list li {
+    padding: 15px;
+    border-bottom: 1px solid #222;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.bonus-list li:hover {
+    color: var(--dd-red);
+}
+
+/* Simulated Video Player Screens */
+#video-player {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: #020202;
+}
+
+.city-rain-bg {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, #05050c 0%, #000000 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Rain Animation for Daredevil Atmosphere */
+.rain {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0px, rgba(255, 255, 255, 0.05) 2px, transparent 2px, transparent 100px);
+    animation: rainFall 0.8s infinite linear;
+}
+
+@keyframes rainFall {
+    0% { background-position: 0 0; }
+    100% { background-position: 10% 500px; }
+}
+
+.dd-silhouette {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, var(--dd-red) 0%, transparent 70%);
+    position: absolute;
+    bottom: 10%;
+    left: 40%;
+    opacity: 0.4;
+    filter: blur(15px);
+    animation: pulseSilhouette 4s infinite alternate;
+}
+
+@keyframes pulseSilhouette {
+    0% { transform: scale(1); opacity: 0.3; }
+    100% { transform: scale(1.2); opacity: 0.6; }
+}
+
+.video-overlay-text {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Pop-up BD Menu inside Video Player */
+#popup-menu {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid var(--dd-red);
+    border-radius: 8px;
+    padding: 15px;
+    width: 300px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    z-index: 100;
+}
+
+.popup-title {
+    font-size: 10px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.popup-options {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.popup-options li {
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 4px;
+}
+
+.popup-options li:hover {
+    background-color: var(--dd-red);
+    color: #fff;
+}
+
+/* macOS Media Controls Dock */
+.player-controls {
+    height: 52px;
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--mac-border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 15px;
+    z-index: 100;
+}
+
+.control-btn {
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.control-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.control-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: #fff;
+}
+
+#popup-btn {
+    width: auto;
+    padding: 0 12px;
+    border-radius: 16px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #aaa;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+#popup-btn:hover {
+    color: #fff;
+    border-color: var(--dd-red);
+}
+
+/* Media Timeline */
+.timeline-container {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.time-display {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: #999;
+}
+
+.progress-bar {
+    flex-grow: 1;
+    height: 6px;
+    background-color: #333;
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    background-color: var(--dd-red);
+    border-radius: 3px;
+}
+
+/* Volume styling */
+.volume-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.volume-slider {
+    width: 70px;
+    accent-color: var(--dd-red);
+    cursor: pointer;
+}
+
+/* Helpers */
+.hidden { display: none !important; }
