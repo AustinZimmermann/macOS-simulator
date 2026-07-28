@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja-JP">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Simulator (ja-JP)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .glass {
+            background: rgba(30, 30, 30, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .glass-window {
+            background: rgba(24, 24, 27, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .dock-glass {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body id="desktop-bg" class="h-screen w-screen overflow-hidden relative bg-cover bg-center transition-all duration-700" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2560&auto=format&fit=crop');">
+
+    <!-- Top Menu Bar -->
+    <div class="h-7 w-full glass text-white text-xs flex items-center justify-between px-3 fixed top-0 left-0 z-50 select-none shadow-sm">
+        <div class="flex items-center space-x-4">
+            <button id="apple-menu-btn" class="hover:bg-white/20 px-1.5 py-0.5 rounded transition font-bold flex items-center">
+                <i data-lucide="apple" class="w-4 h-4"></i>
+            </button>
+            <span id="active-app-name" class="font-semibold">Finder</span>
+            <span class="hover:bg-white/20 px-2 py-0.5 rounded transition cursor-pointer hidden sm:inline">ファイル</span>
+            <span class="hover:bg-white/20 px-2 py-0.5 rounded transition cursor-pointer hidden sm:inline">編集</span>
+            <span class="hover:bg-white/20 px-2 py-0.5 rounded transition cursor-pointer hidden sm:inline">表示</span>
+            <span class="hover:bg-white/20 px-2 py-0.5 rounded transition cursor-pointer hidden sm:inline">移動</span>
+            <span class="hover:bg-white/20 px-2 py-0.5 rounded transition cursor-pointer hidden sm:inline">ウインドウ</span>
+            <span class="hover:bg-white/20 px-2 py-0.5 rounded transition cursor-pointer hidden sm:inline">ヘルプ</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-1 hover:bg-white/20 px-2 py-0.5 rounded cursor-pointer">
+                <i data-lucide="battery-medium" class="w-4 h-4"></i>
+                <span>100%</span>
+            </div>
+            <div class="hover:bg-white/20 p-1 rounded cursor-pointer">
+                <i data-lucide="wifi" class="w-4 h-4"></i>
+            </div>
+            <div class="hover:bg-white/20 p-1 rounded cursor-pointer">
+                <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <div class="hover:bg-white/20 p-1 rounded cursor-pointer">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            </div>
+            <span id="menu-clock" class="cursor-pointer hover:bg-white/20 px-2 py-0.5 rounded">7月27日 (月) 21:27</span>
+        </div>
+    </div>
+
+    <!-- Apple Dropdown Menu -->
+    <div id="apple-dropdown" class="hidden absolute top-8 left-2 w-56 glass-window text-white text-xs rounded-xl shadow-2xl p-1.5 z-50 flex flex-col space-y-0.5 border border-white/10">
+        <button onclick="openApp('settings')" class="flex items-center justify-between px-3 py-1.5 hover:bg-blue-600 rounded-lg text-left"><span>このMacについて</span></button>
+        <div class="h-[1px] bg-white/10 my-1"></div>
+        <button onclick="openApp('settings')" class="flex items-center justify-between px-3 py-1.5 hover:bg-blue-600 rounded-lg text-left"><span>システム設定...</span></button>
+        <div class="h-[1px] bg-white/10 my-1"></div>
+        <button onclick="lockScreen()" class="flex items-center justify-between px-3 py-1.5 hover:bg-blue-600 rounded-lg text-left"><span>画面をロック</span><span class="text-white/40">^⌘Q</span></button>
+        <button onclick="alert('シミュレータを再起動します。')" class="flex items-center justify-between px-3 py-1.5 hover:bg-blue-600 rounded-lg text-left"><span>再起動...</span></button>
+    </div>
+
+    <!-- Desktop Icons Area -->
+    <div class="absolute top-10 left-4 bottom-20 right-4 grid grid-cols-1 gap-4 content-start items-start justify-items-start z-0 pointer-events-auto">
+        <!-- Macintosh HD -->
+        <div onclick="openApp('finder')" class="group flex flex-col items-center w-20 p-2 rounded-xl hover:bg-white/10 cursor-pointer transition text-white text-center">
+            <div class="w-14 h-14 bg-gradient-to-b from-blue-400 to-blue-600 rounded-2xl shadow-lg flex items-center justify-center mb-1 group-hover:scale-105 transition">
+                <i data-lucide="hard-drive" class="w-8 h-8 text-white"></i>
+            </div>
+            <span class="text-xs drop-shadow bg-black/30 px-1 rounded truncate w-full">Macintosh HD</span>
+        </div>
+        <!-- Notes Shortcut -->
+        <div onclick="openApp('notes')" class="group flex flex-col items-center w-20 p-2 rounded-xl hover:bg-white/10 cursor-pointer transition text-white text-center">
+            <div class="w-14 h-14 bg-gradient-to-b from-amber-200 to-amber-400 rounded-2xl shadow-lg flex items-center justify-center mb-1 group-hover:scale-105 transition">
+                <i data-lucide="file-text" class="w-8 h-8 text-amber-900"></i>
+            </div>
+            <span class="text-xs drop-shadow bg-black/30 px-1 rounded truncate w-full">メモ</span>
+        </div>
+    </div>
+
+    <!-- Workspace for Windows -->
+    <div id="windows-container" class="absolute inset-0 pt-7 pb-20 pointer-events-none overflow-hidden z-10"></div>
+
+    <!-- Dock -->
+    <div class="absolute bottom-2 left-1/2 -translate-x-1/2 h-16 dock-glass rounded-2xl px-3 flex items-center space-x-3 z-40 shadow-2xl">
+        <!-- Finder -->
+        <div onclick="openApp('finder')" class="group relative flex flex-col items-center cursor-pointer transition-all duration-200 hover:-translate-y-2 hover:scale-110">
+            <div class="w-12 h-12 bg-gradient-to-b from-blue-400 to-blue-600 rounded-2xl shadow-md flex items-center justify-center text-white">
+                <i data-lucide="smile" class="w-7 h-7"></i>
+            </div>
+            <span class="absolute -top-8 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Finder</span>
+            <div id="dot-finder" class="w-1 h-1 bg-white rounded-full mt-1 opacity-0"></div>
+        </div>
+        <!-- Safari -->
+        <div onclick="openApp('safari')" class="group relative flex flex-col items-center cursor-pointer transition-all duration-200 hover:-translate-y-2 hover:scale-110">
+            <div class="w-12 h-12 bg-gradient-to-b from-cyan-400 to-blue-500 rounded-2xl shadow-md flex items-center justify-center text-white">
+                <i data-lucide="compass" class="w-7 h-7"></i>
+            </div>
+            <span class="absolute -top-8 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Safari</span>
+            <div id="dot-safari" class="w-1 h-1 bg-white rounded-full mt-1 opacity-0"></div>
+        </div>
+        <!-- Notes -->
+        <div onclick="openApp('notes')" class="group relative flex flex-col items-center cursor-pointer transition-all duration-200 hover:-translate-y-2 hover:scale-110">
+            <div class="w-12 h-12 bg-gradient-to-b from-amber-300 to-amber-500 rounded-2xl shadow-md flex items-center justify-center text-amber-950">
+                <i data-lucide="file-text" class="w-7 h-7"></i>
+            </div>
+            <span class="absolute -top-8 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">メモ</span>
+            <div id="dot-notes" class="w-1 h-1 bg-white rounded-full mt-1 opacity-0"></div>
+        </div>
+        <!-- Terminal -->
+        <div onclick="openApp('terminal')" class="group relative flex flex-col items-center cursor-pointer transition-all duration-200 hover:-translate-y-2 hover:scale-110">
+            <div class="w-12 h-12 bg-gray-900 rounded-2xl shadow-md flex items-center justify-center text-green-400 border border-gray-700">
+                <i data-lucide="terminal" class="w-7 h-7"></i>
+            </div>
+            <span class="absolute -top-8 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">ターミナル</span>
+            <div id="dot-terminal" class="w-1 h-1 bg-white rounded-full mt-1 opacity-0"></div>
+        </div>
+        <!-- Settings -->
+        <div onclick="openApp('settings')" class="group relative flex flex-col items-center cursor-pointer transition-all duration-200 hover:-translate-y-2 hover:scale-110">
+            <div class="w-12 h-12 bg-gradient-to-b from-gray-300 to-gray-500 rounded-2xl shadow-md flex items-center justify-center text-gray-800">
+                <i data-lucide="settings" class="w-7 h-7"></i>
+            </div>
+            <span class="absolute -top-8 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">システム設定</span>
+            <div id="dot-settings" class="w-1 h-1 bg-white rounded-full mt-1 opacity-0"></div>
+        </div>
+        
+        <div class="w-[1px] h-10 bg-white/20 mx-1"></div>
+
+        <!-- Trash -->
+        <div onclick="openApp('trash')" class="group relative flex flex-col items-center cursor-pointer transition-all duration-200 hover:-translate-y-2 hover:scale-110">
+            <div class="w-12 h-12 bg-gradient-to-b from-gray-600 to-gray-800 rounded-2xl shadow-md flex items-center justify-center text-white">
+                <i data-lucide="trash-2" class="w-7 h-7"></i>
+            </div>
+            <span class="absolute -top-8 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">ゴミ箱</span>
+        </div>
+    </div>
+
+    <!-- Application Templates & Logic -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Clock update
+        function updateClock() {
+            const now = new Date();
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const day = days[now.getDay()];
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('menu-clock').innerText = `${month}月${date}日 (${day}) ${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Apple menu toggle
+        const appleBtn = document.getElementById('apple-menu-btn');
+        const appleDropdown = document.getElementById('apple-dropdown');
+        appleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            appleDropdown.classList.toggle('hidden');
+        });
+        window.addEventListener('click', () => {
+            appleDropdown.classList.add('hidden');
+        });
+
+        // Window management state
+        let zIndexCounter = 10;
+        const windows = {};
+
+        const appDetails = {
+            finder: { title: 'Finder - Macintosh HD', icon: 'smile', name: 'Finder' },
+            safari: { title: 'Safari - ウェブブラウザ', icon: 'compass', name: 'Safari' },
+            notes: { title: 'メモ - 新規メモ', icon: 'file-text', name: 'メモ' },
+            terminal: { title: 'ターミナル - zsh', icon: 'terminal', name: 'ターミナル' },
+            settings: { title: 'システム設定', icon: 'settings', name: 'システム設定' },
+            trash: { title: 'ゴミ箱', icon: 'trash-2', name: 'ゴミ箱' }
+        };
+
+        function openApp(appId) {
+            appleDropdown.classList.add('hidden');
+            const dot = document.getElementById(`dot-${appId}`);
+            if (dot) dot.classList.remove('opacity-0');
+
+            if (windows[appId]) {
+                // Bring to front
+                windows[appId].style.zIndex = ++zIndexCounter;
+                windows[appId].classList.remove('hidden');
+                return;
+            }
+
+            createWindow(appId);
+        }
+
+        function createWindow(appId) {
+            const container = document.getElementById('windows-container');
+            const details = appDetails[appId];
+
+            const win = document.createElement('div');
+            win.id = `window-${appId}`;
+            win.className = `absolute pointer-events-auto glass-window rounded-xl shadow-2xl flex flex-col overflow-hidden text-white transition-shadow duration-200`;
+            
+            // Random offset for multiple windows
+            const offset = Object.keys(windows).length * 30;
+            win.style.width = '650px';
+            win.style.height = '420px';
+            win.style.top = `${60 + offset}%`;
+            win.style.left = `${15 + offset}%`;
+            win.style.zIndex = ++zIndexCounter;
+
+            win.innerHTML = `
+                <!-- Window Header -->
+                <div class="h-9 bg-black/20 border-b border-white/10 flex items-center justify-between px-3 cursor-move select-none" id="header-${appId}">
+                    <div class="flex items-center space-x-2">
+                        <button onclick="closeWindow('${appId}')" class="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-black/60 group focus:outline-none">
+                            <span class="opacity-0 group-hover:opacity-100 text-[8px] font-bold">×</span>
+                        </button>
+                        <button onclick="minimizeWindow('${appId}')" class="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 flex items-center justify-center text-black/60 group focus:outline-none">
+                            <span class="opacity-0 group-hover:opacity-100 text-[8px] font-bold">-</span>
+                        </button>
+                        <button class="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-black/60 group focus:outline-none">
+                            <span class="opacity-0 group-hover:opacity-100 text-[8px] font-bold">+</span>
+                        </button>
+                    </div>
+                    <div class="text-xs font-medium text-white/80 flex items-center space-x-1.5">
+                        <i data-lucide="${details.icon}" class="w-3.5 h-3.5"></i>
+                        <span>${details.title}</span>
+                    </div>
+                    <div class="w-12"></div>
+                </div>
+                <!-- Window Body Content -->
+                <div class="flex-1 flex overflow-hidden bg-gray-950/40 text-sm" id="content-${appId}">
+                    ${getAppContent(appId)}
+                </div>
+            `;
+
+            container.appendChild(win);
+            windows[appId] = win;
+            lucide.createIcons();
+
+            // Dragging logic
+            makeDraggable(win, document.getElementById(`header-${appId}`));
+
+            // Focus on click
+            win.addEventListener('mousedown', () => {
+                win.style.zIndex = ++zIndexCounter;
+                document.getElementById('active-app-name').innerText = details.name;
+            });
+
+            document.getElementById('active-app-name').innerText = details.name;
+
+            // Specific app runtime behaviors
+            if (appId === 'terminal') initTerminalLogic();
+        }
+
+        function closeWindow(appId) {
+            if (windows[appId]) {
+                windows[appId].remove();
+                delete windows[appId];
+                const dot = document.getElementById(`dot-${appId}`);
+                if (dot) dot.classList.add('opacity-0');
+            }
+        }
+
+        function minimizeWindow(appId) {
+            if (windows[appId]) {
+                windows[appId].classList.add('hidden');
+            }
+        }
+
+        function makeDraggable(elmnt, header) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            header.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+                elmnt.style.zIndex = ++zIndexCounter;
+            }
+
+            function elementDrag(e) {
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        function getAppContent(appId) {
+            switch(appId) {
+                case 'finder':
+                    return `
+                        <div class="w-44 border-r border-white/10 p-2 flex flex-col space-y-1 bg-black/20">
+                            <div class="text-[10px] text-white/40 px-2 uppercase font-bold">お気に入り</div>
+                            <div class="px-2 py-1 bg-blue-600/40 rounded text-xs flex items-center space-x-2 cursor-pointer"><i data-lucide="hard-drive" class="w-3.5 h-3.5"></i><span>Macintosh HD</span></div>
+                            <div class="px-2 py-1 hover:bg-white/10 rounded text-xs flex items-center space-x-2 cursor-pointer"><i data-lucide="home" class="w-3.5 h-3.5"></i><span>ホーム</span></div>
+                            <div class="px-2 py-1 hover:bg-white/10 rounded text-xs flex items-center space-x-2 cursor-pointer"><i data-lucide="download" class="w-3.5 h-3.5"></i><span>ダウンロード</span></div>
+                            <div class="px-2 py-1 hover:bg-white/10 rounded text-xs flex items-center space-x-2 cursor-pointer"><i data-lucide="image" class="w-3.5 h-3.5"></i><span>ピクチャ</span></div>
+                        </div>
+                        <div class="flex-1 p-4 grid grid-cols-4 gap-4 content-start overflow-y-auto">
+                            <div class="flex flex-col items-center p-2 rounded hover:bg-white/10 cursor-pointer">
+                                <i data-lucide="folder" class="w-10 h-10 text-blue-400"></i>
+                                <span class="text-xs mt-1 text-center">書類</span>
+                            </div>
+                            <div class="flex flex-col items-center p-2 rounded hover:bg-white/10 cursor-pointer">
+                                <i data-lucide="folder" class="w-10 h-10 text-blue-400"></i>
+                                <span class="text-xs mt-1 text-center">アプリケーション</span>
+                            </div>
+                            <div class="flex flex-col items-center p-2 rounded hover:bg-white/10 cursor-pointer">
+                                <i data-lucide="file-text" class="w-10 h-10 text-gray-400"></i>
+                                <span class="text-xs mt-1 text-center">README.txt</span>
+                            </div>
+                            <div class="flex flex-col items-center p-2 rounded hover:bg-white/10 cursor-pointer">
+                                <i data-lucide="image" class="w-10 h-10 text-purple-400"></i>
+                                <span class="text-xs mt-1 text-center">wallpaper.png</span>
+                            </div>
+                        </div>
+                    `;
+                case 'safari':
+                    return `
+                        <div class="flex-1 flex flex-col">
+                            <div class="h-10 border-b border-white/10 flex items-center px-4 space-x-2 bg-black/10">
+                                <div class="flex space-x-1 text-white/50">
+                                    <i data-lucide="chevron-left" class="w-4 h-4 cursor-pointer hover:text-white"></i>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 cursor-pointer hover:text-white"></i>
+                                </div>
+                                <div class="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-1 text-xs flex items-center justify-between text-white/80">
+                                    <span class="flex items-center space-x-2"><i data-lucide="lock" class="w-3 h-3 text-green-400"></i><span>https://www.apple.com/jp</span></span>
+                                    <i data-lucide="rotate-cw" class="w-3 h-3 cursor-pointer hover:text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 p-8 overflow-y-auto bg-white text-gray-900 flex flex-col items-center justify-center text-center">
+                                <i data-lucide="apple" class="w-16 h-16 text-black mb-4"></i>
+                                <h1 class="text-2xl font-bold mb-2">Apple (日本)</h1>
+                                <p class="text-sm text-gray-600 max-w-md">macOS シミュレータのブラウザへようこそ。ウェブの閲覧が快適に体験できます。</p>
+                                <div class="mt-6 flex space-x-4">
+                                    <button onclick="alert('公式サイトへのリンクです')" class="bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-semibold shadow hover:bg-blue-700">詳細を見る</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                case 'notes':
+                    return `
+                        <div class="w-48 border-r border-white/10 flex flex-col bg-black/20">
+                            <div class="p-2 border-b border-white/10 font-bold text-xs text-amber-300">メモ一覧</div>
+                            <div class="p-2 hover:bg-white/10 cursor-pointer border-b border-white/5 text-xs">
+                                <div class="font-bold">買い物リスト</div>
+                                <div class="text-[10px] text-white/50">牛乳、コーヒー豆、パン...</div>
+                            </div>
+                            <div class="p-2 bg-white/10 cursor-pointer border-b border-white/5 text-xs">
+                                <div class="font-bold">macOS開発アイデア</div>
+                                <div class="text-[10px] text-white/50">ダークモードの実装やウィンドウ...</div>
+                            </div>
+                        </div>
+                        <div class="flex-1 p-4 flex flex-col bg-stone-900 text-stone-200">
+                            <input type="text" value="macOS開発アイデア" class="bg-transparent font-bold text-base border-b border-white/10 pb-2 mb-2 focus:outline-none">
+                            <textarea class="flex-1 bg-transparent resize-none focus:outline-none text-sm leading-relaxed" placeholder="ここにメモを入力...">macOS シミュレータへようこそ！
+HTML、Tailwind CSS、そして JavaScript で完全に動作する美しいUIを再現しています。ウィンドウのドラッグや閉じる・最小化もスムーズです。</textarea>
+                        </div>
+                    `;
+                case 'terminal':
+                    return `
+                        <div id="terminal-body" class="flex-1 bg-black/90 font-mono text-xs text-green-400 p-3 overflow-y-auto flex flex-col space-y-1">
+                            <div>Last login: ${new Date().toLocaleString()} on ttys001</div>
+                            <div>macOS Sonoma Simulator (arm64) - type "help" for available commands.</div>
+                            <div id="terminal-output"></div>
+                            <div class="flex items-center space-x-1">
+                                <span class="text-blue-400">visitor@macbook-pro ~ %</span>
+                                <input id="terminal-input" type="text" autofocus class="flex-1 bg-transparent text-green-400 focus:outline-none">
+                            </div>
+                        </div>
+                    `;
+                case 'settings':
+                    return `
+                        <div class="w-48 border-r border-white/10 p-3 flex flex-col space-y-1 bg-black/20">
+                            <div class="text-[10px] text-white/40 uppercase font-bold mb-1">システム設定</div>
+                            <div class="px-2 py-1.5 bg-blue-600/40 rounded text-xs flex items-center space-x-2 cursor-pointer font-medium"><i data-lucide="image" class="w-4 h-4"></i><span>デスクトップと壁紙</span></div>
+                            <div class="px-2 py-1.5 hover:bg-white/10 rounded text-xs flex items-center space-x-2 cursor-pointer"><i data-lucide="monitor" class="w-4 h-4"></i><span>ディスプレイ</span></div>
+                            <div class="px-2 py-1.5 hover:bg-white/10 rounded text-xs flex items-center space-x-2 cursor-pointer"><i data-lucide="battery" class="w-4 h-4"></i><span>バッテリー</span></div>
+                            <div class="px-2 py-1.5 hover:bg-white/10 rounded text-xs flex items-center space-x-2 cursor-pointer"><i data-lucide="info" class="w-4 h-4"></i><span>情報</span></div>
+                        </div>
+                        <div class="flex-1 p-6 flex flex-col space-y-4 overflow-y-auto">
+                            <h2 class="text-base font-bold border-b border-white/10 pb-2">壁紙の変更</h2>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div onclick="changeWallpaper('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2560&auto=format&fit=crop')" class="cursor-pointer border-2 border-blue-500 rounded-lg overflow-hidden h-28 bg-cover bg-center shadow" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop')"></div>
+                                <div onclick="changeWallpaper('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2560&auto=format&fit=crop')" class="cursor-pointer border-2 border-transparent hover:border-white/50 rounded-lg overflow-hidden h-28 bg-cover bg-center shadow" style="background-image: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=600&auto=format&fit=crop')"></div>
+                                <div onclick="changeWallpaper('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2560&auto=format&fit=crop')" class="cursor-pointer border-2 border-transparent hover:border-white/50 rounded-lg overflow-hidden h-28 bg-cover bg-center shadow" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600&auto=format&fit=crop')"></div>
+                                <div onclick="changeWallpaper('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2560&auto=format&fit=crop')" class="cursor-pointer border-2 border-transparent hover:border-white/50 rounded-lg overflow-hidden h-28 bg-cover bg-center shadow" style="background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=600&auto=format&fit=crop')"></div>
+                            </div>
+                        </div>
+                    `;
+                case 'trash':
+                    return `
+                        <div class="flex-1 flex flex-col items-center justify-center text-center p-6 text-white/60">
+                            <i data-lucide="trash-2" class="w-16 h-16 mb-2 text-white/30"></i>
+                            <p class="font-bold text-sm">ゴミ箱は空です</p>
+                            <p class="text-xs text-white/40 mt-1">削除したアイテムはここに表示されます。</p>
+                        </div>
+                    `;
+                default:
+                    return `<div class="p-4">コンテンツがありません</div>`;
+            }
+        }
+
+        function changeWallpaper(url) {
+            document.getElementById('desktop-bg').style.backgroundImage = `url('${url}')`;
+        }
+
+        function lockScreen() {
+            alert('ロック画面機能（ダミー）');
+        }
+
+        // Terminal Interactive Script
+        function initTerminalLogic() {
+            const input = document.getElementById('terminal-input');
+            const output = document.getElementById('terminal-output');
+            const termBody = document.getElementById('terminal-body');
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const cmd = input.value.trim();
+                    const lineDiv = document.createElement('div');
+                    lineDiv.innerHTML = `<span class="text-blue-400">visitor@macbook-pro ~ %</span> ${cmd}`;
+                    output.appendChild(lineDiv);
+
+                    const resDiv = document.createElement('div');
+                    resDiv.className = "text-white/80 mb-1";
+
+                    if (cmd === 'help') {
+                        resDiv.innerHTML = '利用可能なコマンド:<br> - date: 現在時刻を表示<br> - uname: システム情報を表示<br> - clear: 画面をクリア<br> - echo [text]: テキストを出力';
+                    } else if (cmd === 'date') {
+                        resDiv.innerText = new Date().toString();
+                    } else if (cmd === 'uname') {
+                        resDiv.innerText = 'Darwin MacBookProSimulator 23.4.0 arm64';
+                    } else if (cmd === 'clear') {
+                        output.innerHTML = '';
+                        input.value = '';
+                        return;
+                    } else if (cmd.startsWith('echo ')) {
+                        resDiv.innerText = cmd.substring(5);
+                    } else if (cmd === '') {
+                        resDiv.innerText = '';
+                    } else {
+                        resDiv.innerText = `zsh: command not found: ${cmd}`;
+                    }
+
+                    output.appendChild(resDiv);
+                    input.value = '';
+                    termBody.scrollTop = termBody.scrollHeight;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
